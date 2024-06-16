@@ -48,7 +48,7 @@ def main():
     hectares = st.sidebar.number_input('Total de Hectares', min_value=0.0, format='%f')
 
     if st.sidebar.button('Adicionar Piloto'):
-        if piloto and inicio_safra and fim_safra e hectares:
+        if piloto and inicio_safra and fim_safra and hectares:
             novo_piloto = {
                 'piloto': piloto,
                 'inicio_safra': inicio_safra,
