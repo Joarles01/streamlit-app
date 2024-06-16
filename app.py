@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 
 # Função para gerar o gráfico
-def gerar_grafico(df):
-    colors = ['darkcyan', 'orange', 'green', 'blue', 'darkorange', 'darkblue', 'purple']
+def gerar_grafico(df, colors):
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 16), sharex=True)
 
     # Subplot para Total de Hectares
@@ -64,6 +63,7 @@ def main():
                 'hectares': hectares
             }
             pilotos.append(novo_piloto)
+            cores.append('#1f77b4')  # Cor padrão azul
             st.sidebar.success('Piloto adicionado com sucesso!')
         else:
             st.sidebar.error('Por favor, preencha todos os campos.')
@@ -71,8 +71,15 @@ def main():
     st.sidebar.title('Remover Piloto')
     piloto_remover = st.sidebar.selectbox('Selecione o Piloto', [p['piloto'] for p in pilotos])
     if st.sidebar.button('Remover Piloto'):
-        pilotos[:] = [p for p in pilotos if p['piloto'] != piloto_remover]
+        index = next(i for i, p in enumerate(pilotos) if p['piloto'] == piloto_remover)
+        del pilotos[index]
+        del cores[index]
         st.sidebar.success('Piloto removido com sucesso!')
+
+    st.sidebar.title('Modificar Cor dos Pilotos')
+    for i, p in enumerate(pilotos):
+        nova_cor = st.sidebar.color_picker(f'Cor do {p["piloto"]}', cores[i])
+        cores[i] = nova_cor
 
     df = pd.DataFrame(pilotos)
     df['inicio_safra'] = pd.to_datetime(df['inicio_safra'], format='%d/%m/%Y')
@@ -83,7 +90,7 @@ def main():
 
     st.write(df)
 
-    fig, fig = gerar_grafico(df)
+    fig, fig = gerar_grafico(df, cores)
     st.pyplot(fig)
 
     # Botão para baixar o gráfico
@@ -99,6 +106,8 @@ pilotos = [
     {'piloto': 'FERNANDO', 'inicio_safra': '01/03/2024', 'fim_safra': '31/05/2024', 'hectares': 3476.85},
     {'piloto': 'WELINGTON', 'inicio_safra': '01/05/2024', 'fim_safra': '31/05/2024', 'hectares': 387.5}
 ]
+
+cores = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']  # Cores iniciais
 
 if __name__ == '__main__':
     main()
