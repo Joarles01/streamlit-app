@@ -69,45 +69,39 @@ def main():
             st.sidebar.error('Por favor, preencha todos os campos.')
 
     st.sidebar.title('Remover Piloto')
-    piloto_remover = st.sidebar.selectbox('Selecione o Piloto', [p['piloto'] for p in pilotos])
-    if st.sidebar.button('Remover Piloto'):
-        index = next(i for i, p in enumerate(pilotos) if p['piloto'] == piloto_remover)
-        del pilotos[index]
-        del cores[index]
-        st.sidebar.success('Piloto removido com sucesso!')
+    if pilotos:
+        piloto_remover = st.sidebar.selectbox('Selecione o Piloto', [p['piloto'] for p in pilotos])
+        if st.sidebar.button('Remover Piloto'):
+            index = next(i for i, p in enumerate(pilotos) if p['piloto'] == piloto_remover)
+            del pilotos[index]
+            del cores[index]
+            st.sidebar.success('Piloto removido com sucesso!')
 
     st.sidebar.title('Modificar Cor dos Pilotos')
     for i, p in enumerate(pilotos):
         nova_cor = st.sidebar.color_picker(f'Cor do {p["piloto"]}', cores[i])
         cores[i] = nova_cor
 
-    df = pd.DataFrame(pilotos)
-    df['inicio_safra'] = pd.to_datetime(df['inicio_safra'], format='%d/%m/%Y')
-    df['fim_safra'] = pd.to_datetime(df['fim_safra'], format='%d/%m/%Y')
-    df['duracao_safra'] = (df['fim_safra'] - df['inicio_safra']).dt.days
-    df['media_hectares_dia'] = df['hectares'] / df['duracao_safra']
-    df['media_hectares_dia'] = df['media_hectares_dia'].round(2)
+    if pilotos:
+        df = pd.DataFrame(pilotos)
+        df['inicio_safra'] = pd.to_datetime(df['inicio_safra'], format='%d/%m/%Y')
+        df['fim_safra'] = pd.to_datetime(df['fim_safra'], format='%d/%m/%Y')
+        df['duracao_safra'] = (df['fim_safra'] - df['inicio_safra']).dt.days
+        df['media_hectares_dia'] = df['hectares'] / df['duracao_safra']
+        df['media_hectares_dia'] = df['media_hectares_dia'].round(2)
 
-    st.write(df)
+        st.write(df)
 
-    fig, fig = gerar_grafico(df, cores)
-    st.pyplot(fig)
+        fig, fig = gerar_grafico(df, cores)
+        st.pyplot(fig)
 
-    # Botão para baixar o gráfico
-    buf = salvar_grafico(fig)
-    st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
+        # Botão para baixar o gráfico
+        buf = salvar_grafico(fig)
+        st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
 
 # Dados iniciais
-pilotos = [
-    {'piloto': 'ARIMATEIA', 'inicio_safra': '01/02/2024', 'fim_safra': '31/05/2024', 'hectares': 1430.9},
-    {'piloto': 'SANIEL', 'inicio_safra': '01/12/2023', 'fim_safra': '31/05/2024', 'hectares': 4842.64},
-    {'piloto': 'ALISSION', 'inicio_safra': '01/12/2023', 'fim_safra': '31/05/2024', 'hectares': 4120.94},
-    {'piloto': 'NAILSON', 'inicio_safra': '01/12/2023', 'fim_safra': '31/05/2024', 'hectares': 4095.58},
-    {'piloto': 'FERNANDO', 'inicio_safra': '01/03/2024', 'fim_safra': '31/05/2024', 'hectares': 3476.85},
-    {'piloto': 'WELINGTON', 'inicio_safra': '01/05/2024', 'fim_safra': '31/05/2024', 'hectares': 387.5}
-]
-
-cores = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']  # Cores iniciais
+pilotos = []
+cores = []
 
 if __name__ == '__main__':
     main()
