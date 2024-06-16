@@ -46,8 +46,13 @@ def salvar_grafico(fig):
 
 # Função principal do aplicativo
 def main():
-    st.title('Gerenciamento de Pilotos e Safra')
-    
+    st.set_page_config(page_title="GERENCIAMENTO DE PILOTOS DS DRONES", page_icon=":helicopter:", layout="wide")
+    st.title('GERENCIAMENTO DE PILOTOS DS DRONES')
+
+    # Adicionar o logotipo da empresa
+    logo_path = "C:\Users\User\Downloads\LOGOS\logo"  # Substitua pelo caminho do seu logotipo
+    st.sidebar.image(logo_path, use_column_width=True)
+
     # Inicializar a lista de pilotos e cores no session_state
     if 'pilotos' not in st.session_state:
         st.session_state['pilotos'] = []
