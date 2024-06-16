@@ -48,6 +48,12 @@ def salvar_grafico(fig):
 def main():
     st.title('Gerenciamento de Pilotos e Safra')
     
+    # Inicializar a lista de pilotos e cores no session_state
+    if 'pilotos' not in st.session_state:
+        st.session_state['pilotos'] = []
+    if 'cores' not in st.session_state:
+        st.session_state['cores'] = []
+
     st.sidebar.title('Adicionar Novo Piloto')
     piloto = st.sidebar.text_input('Nome do Piloto')
     inicio_safra = st.sidebar.date_input('Início da Safra')
@@ -62,28 +68,28 @@ def main():
                 'fim_safra': fim_safra.strftime('%d/%m/%Y'),
                 'hectares': hectares
             }
-            pilotos.append(novo_piloto)
-            cores.append('#1f77b4')  # Cor padrão azul
+            st.session_state['pilotos'].append(novo_piloto)
+            st.session_state['cores'].append('#1f77b4')  # Cor padrão azul
             st.sidebar.success('Piloto adicionado com sucesso!')
         else:
             st.sidebar.error('Por favor, preencha todos os campos.')
 
     st.sidebar.title('Remover Piloto')
-    if pilotos:
-        piloto_remover = st.sidebar.selectbox('Selecione o Piloto', [p['piloto'] for p in pilotos])
+    if st.session_state['pilotos']:
+        piloto_remover = st.sidebar.selectbox('Selecione o Piloto', [p['piloto'] for p in st.session_state['pilotos']])
         if st.sidebar.button('Remover Piloto'):
-            index = next(i for i, p in enumerate(pilotos) if p['piloto'] == piloto_remover)
-            del pilotos[index]
-            del cores[index]
+            index = next(i for i, p in enumerate(st.session_state['pilotos']) if p['piloto'] == piloto_remover)
+            del st.session_state['pilotos'][index]
+            del st.session_state['cores'][index]
             st.sidebar.success('Piloto removido com sucesso!')
 
     st.sidebar.title('Modificar Cor dos Pilotos')
-    for i, p in enumerate(pilotos):
-        nova_cor = st.sidebar.color_picker(f'Cor do {p["piloto"]}', cores[i])
-        cores[i] = nova_cor
+    for i, p in enumerate(st.session_state['pilotos']):
+        nova_cor = st.sidebar.color_picker(f'Cor do {p["piloto"]}', st.session_state['cores'][i])
+        st.session_state['cores'][i] = nova_cor
 
-    if pilotos:
-        df = pd.DataFrame(pilotos)
+    if st.session_state['pilotos']:
+        df = pd.DataFrame(st.session_state['pilotos'])
         df['inicio_safra'] = pd.to_datetime(df['inicio_safra'], format='%d/%m/%Y')
         df['fim_safra'] = pd.to_datetime(df['fim_safra'], format='%d/%m/%Y')
         df['duracao_safra'] = (df['fim_safra'] - df['inicio_safra']).dt.days
@@ -92,16 +98,12 @@ def main():
 
         st.write(df)
 
-        fig, fig = gerar_grafico(df, cores)
+        fig, fig = gerar_grafico(df, st.session_state['cores'])
         st.pyplot(fig)
 
         # Botão para baixar o gráfico
         buf = salvar_grafico(fig)
         st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
-
-# Dados iniciais
-pilotos = []
-cores = []
 
 if __name__ == '__main__':
     main()
