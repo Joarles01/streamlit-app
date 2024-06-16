@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from io import BytesIO
 
 # Função para gerar o gráfico
 def gerar_grafico(df):
@@ -35,7 +36,14 @@ def gerar_grafico(df):
 
     fig.tight_layout(pad=3.0)
 
-    return fig
+    return fig, fig
+
+# Função para salvar o gráfico como imagem
+def salvar_grafico(fig):
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    return buf
 
 # Função principal do aplicativo
 def main():
@@ -51,8 +59,8 @@ def main():
         if piloto and inicio_safra and fim_safra and hectares:
             novo_piloto = {
                 'piloto': piloto,
-                'inicio_safra': inicio_safra,
-                'fim_safra': fim_safra,
+                'inicio_safra': inicio_safra.strftime('%d/%m/%Y'),
+                'fim_safra': fim_safra.strftime('%d/%m/%Y'),
                 'hectares': hectares
             }
             pilotos.append(novo_piloto)
@@ -60,25 +68,36 @@ def main():
         else:
             st.sidebar.error('Por favor, preencha todos os campos.')
 
+    st.sidebar.title('Remover Piloto')
+    piloto_remover = st.sidebar.selectbox('Selecione o Piloto', [p['piloto'] for p in pilotos])
+    if st.sidebar.button('Remover Piloto'):
+        pilotos[:] = [p for p in pilotos if p['piloto'] != piloto_remover]
+        st.sidebar.success('Piloto removido com sucesso!')
+
     df = pd.DataFrame(pilotos)
-    df['inicio_safra'] = pd.to_datetime(df['inicio_safra'], format='%Y-%m-%d')
-    df['fim_safra'] = pd.to_datetime(df['fim_safra'], format='%Y-%m-%d')
+    df['inicio_safra'] = pd.to_datetime(df['inicio_safra'], format='%d/%m/%Y')
+    df['fim_safra'] = pd.to_datetime(df['fim_safra'], format='%d/%m/%Y')
     df['duracao_safra'] = (df['fim_safra'] - df['inicio_safra']).dt.days
     df['media_hectares_dia'] = df['hectares'] / df['duracao_safra']
     df['media_hectares_dia'] = df['media_hectares_dia'].round(2)
 
     st.write(df)
 
-    st.pyplot(gerar_grafico(df))
+    fig, fig = gerar_grafico(df)
+    st.pyplot(fig)
+
+    # Botão para baixar o gráfico
+    buf = salvar_grafico(fig)
+    st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
 
 # Dados iniciais
 pilotos = [
-    {'piloto': 'ARIMATEIA', 'inicio_safra': '2024-02-01', 'fim_safra': '2024-05-31', 'hectares': 1430.9},
-    {'piloto': 'SANIEL', 'inicio_safra': '2023-12-01', 'fim_safra': '2024-05-31', 'hectares': 4842.64},
-    {'piloto': 'ALISSION', 'inicio_safra': '2023-12-01', 'fim_safra': '2024-05-31', 'hectares': 4120.94},
-    {'piloto': 'NAILSON', 'inicio_safra': '2023-12-01', 'fim_safra': '2024-05-31', 'hectares': 4095.58},
-    {'piloto': 'FERNANDO', 'inicio_safra': '2024-03-01', 'fim_safra': '2024-05-31', 'hectares': 3476.85},
-    {'piloto': 'WELINGTON', 'inicio_safra': '2024-05-01', 'fim_safra': '2024-05-31', 'hectares': 387.5}
+    {'piloto': 'ARIMATEIA', 'inicio_safra': '01/02/2024', 'fim_safra': '31/05/2024', 'hectares': 1430.9},
+    {'piloto': 'SANIEL', 'inicio_safra': '01/12/2023', 'fim_safra': '31/05/2024', 'hectares': 4842.64},
+    {'piloto': 'ALISSION', 'inicio_safra': '01/12/2023', 'fim_safra': '31/05/2024', 'hectares': 4120.94},
+    {'piloto': 'NAILSON', 'inicio_safra': '01/12/2023', 'fim_safra': '31/05/2024', 'hectares': 4095.58},
+    {'piloto': 'FERNANDO', 'inicio_safra': '01/03/2024', 'fim_safra': '31/05/2024', 'hectares': 3476.85},
+    {'piloto': 'WELINGTON', 'inicio_safra': '01/05/2024', 'fim_safra': '31/05/2024', 'hectares': 387.5}
 ]
 
 if __name__ == '__main__':
