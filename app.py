@@ -46,8 +46,8 @@ def salvar_grafico(fig):
 
 # Função principal do aplicativo
 def main():
-    st.set_page_config(page_title="GERENCIAMENTO DE PILOTOS DS DRONES", page_icon=":helicopter:", layout="wide")
-    st.title('GERENCIAMENTO DE PILOTOS DS DRONES')
+    st.set_page_config(page_title="PILOTOS DS DRONES", page_icon=":helicopter:", layout="wide")
+    st.title('PILOTOS DS DRONES')
 
     # Adicionar o logotipo da empresa
     logo_path = "logo.png"  # Caminho relativo do logotipo
