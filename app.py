@@ -50,7 +50,7 @@ def main():
     st.title('GERENCIAMENTO DE PILOTOS DS DRONES')
 
     # Adicionar o logotipo da empresa
-    logo_path = "C:\Users\User\Downloads\LOGOS\logo"  # Substitua pelo caminho do seu logotipo
+    logo_path = "logo.png"  # Caminho relativo do logotipo
     st.sidebar.image(logo_path, use_column_width=True)
 
     # Inicializar a lista de pilotos e cores no session_state
