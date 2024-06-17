@@ -201,8 +201,4 @@ def main():
 
     elif painel == "Piloto":
         st.sidebar.title('Painel do Piloto')
-        st.sidebar.success(f'Logado como {piloto_atual}')
-        st.write(f'Piloto atual: {piloto_atual}')
-
-        # Entrada de Hectares Diários
-       
+        st.sidebar.success
