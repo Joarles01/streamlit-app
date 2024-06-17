@@ -7,36 +7,18 @@ import os
 
 # Função para gerar o gráfico
 def gerar_grafico(df, colors):
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 16), sharex=True)
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Subplot para Total de Hectares
-    bars1 = ax1.bar(df['piloto'], df['hectares'], color=colors, alpha=0.6, width=0.4)
-    for i, piloto in enumerate(df['piloto']):
-        ax1.plot(piloto, df['hectares'][i], color=colors[i], marker='o', linestyle='-', label=f'{piloto}')
-        ax1.annotate(f'{df["hectares"][i]:.2f}', (piloto, df['hectares'][i]), textcoords="offset points", xytext=(0, 10), ha='center', color=colors[i])
-    ax1.set_ylabel('Total de Hectares')
-    ax1.legend(loc='upper left', frameon=False, facecolor='none')
-    ax1.set_title('Total de Hectares', pad=20)
-
-    # Subplot para Duração da Safra
-    bars2 = ax2.bar(df['piloto'], df['duracao_safra'], color=colors, alpha=0.6, width=0.4)
-    for i, piloto in enumerate(df['piloto']):
-        ax2.plot(piloto, df['duracao_safra'][i], color=colors[i], marker='o', linestyle='--', label=f'{piloto}')
-        ax2.annotate(f'{df["duracao_safra"][i]}', (piloto, df['duracao_safra'][i]), textcoords="offset points", xytext=(0, 10), ha='center', color=colors[i])
-    ax2.set_ylabel('Duração da Safra (dias)')
-    ax2.set_title('Duração da Safra (dias)', pad=20)
-
-    # Subplot para Média de Hectares por Dia
-    bars3 = ax3.bar(df['piloto'], df['media_hectares_dia'], color=colors, alpha=0.6, width=0.4)
-    for i, piloto in enumerate(df['piloto']):
-        ax3.plot(piloto, df['media_hectares_dia'][i], color=colors[i], marker='x', linestyle='-', label=f'{piloto}')
-        ax3.annotate(f'{df["media_hectares_dia"][i]}', (piloto, df['media_hectares_dia'][i]), textcoords="offset points", xytext=(0, 10), ha='center', color=colors[i])
-    ax3.set_xlabel('Piloto')
-    ax3.set_ylabel('Média de Hectares por Dia')
-    ax3.set_title('Média de Hectares por Dia', pad=20)
-
-    fig.tight_layout(pad=3.0)
-
+    bars = ax.bar(df['data'], df['hectares'], color=colors, alpha=0.6)
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 2), ha='center', va='bottom')
+    
+    ax.set_ylabel('Hectares')
+    ax.set_xlabel('Data')
+    ax.set_title('Quantidade de Hectares Aplicada Diariamente')
+    fig.autofmt_xdate()
+    
     return fig
 
 # Função para adicionar logomarca ao gráfico
@@ -71,8 +53,8 @@ def adicionar_logomarca(fig, logo_path):
 
 # Função principal do aplicativo
 def main():
-    st.set_page_config(page_title="GERENCIAMENTO DE PILOTOS DS DRONES", page_icon=":helicopter:", layout="wide")
-    st.title('GERENCIAMENTO DE PILOTOS DS DRONES')
+    st.set_page_config(page_title="PILOTOS DS DRONES", page_icon="drone_icon.png", layout="wide")
+    st.title('PILOTOS DS DRONES')
 
     # Adicionar o logotipo da empresa na barra lateral
     logo_path = "logo.png"  # Caminho relativo do logotipo
@@ -83,63 +65,62 @@ def main():
 
     # Inicializar a lista de pilotos e cores no session_state
     if 'pilotos' not in st.session_state:
-        st.session_state['pilotos'] = []
+        st.session_state['pilotos'] = {}
     if 'cores' not in st.session_state:
         st.session_state['cores'] = []
 
-    st.sidebar.title('Adicionar Novo Piloto')
-    piloto = st.sidebar.text_input('Nome do Piloto')
-    inicio_safra = st.sidebar.date_input('Início da Safra')
-    fim_safra = st.sidebar.date_input('Fim da Safra')
-    hectares = st.sidebar.number_input('Total de Hectares', min_value=0.0, format='%f')
+    # Login ou Cadastro de Pilotos
+    st.sidebar.title('Login/Cadastro de Piloto')
+    piloto_nome = st.sidebar.text_input('Nome do Piloto')
 
-    if st.sidebar.button('Adicionar Piloto'):
-        if piloto and inicio_safra and fim_safra and hectares:
-            novo_piloto = {
-                'piloto': piloto,
-                'inicio_safra': inicio_safra.strftime('%d/%m/%Y'),
-                'fim_safra': fim_safra.strftime('%d/%m/%Y'),
-                'hectares': hectares
-            }
-            st.session_state['pilotos'].append(novo_piloto)
-            st.session_state['cores'].append('#1f77b4')  # Cor padrão azul
-            st.sidebar.success('Piloto adicionado com sucesso!')
+    if st.sidebar.button('Login/Cadastrar'):
+        if piloto_nome:
+            if piloto_nome not in st.session_state['pilotos']:
+                st.session_state['pilotos'][piloto_nome] = []
+                st.session_state['cores'].append('#1f77b4')  # Cor padrão azul
+                st.sidebar.success(f'Piloto {piloto_nome} cadastrado com sucesso!')
+            st.session_state['piloto_atual'] = piloto_nome
+            st.sidebar.success(f'Piloto {piloto_nome} logado com sucesso!')
         else:
-            st.sidebar.error('Por favor, preencha todos os campos.')
+            st.sidebar.error('Por favor, insira o nome do piloto.')
 
-    st.sidebar.title('Remover Piloto')
-    if st.session_state['pilotos']:
-        piloto_remover = st.sidebar.selectbox('Selecione o Piloto', [p['piloto'] for p in st.session_state['pilotos']])
-        if st.sidebar.button('Remover Piloto'):
-            index = next(i for i, p in enumerate(st.session_state['pilotos']) if p['piloto'] == piloto_remover)
-            del st.session_state['pilotos'][index]
-            del st.session_state['cores'][index]
-            st.sidebar.success('Piloto removido com sucesso!')
+    if 'piloto_atual' in st.session_state:
+        piloto_atual = st.session_state['piloto_atual']
+        st.write(f'Piloto atual: {piloto_atual}')
 
-    st.sidebar.title('Modificar Cor dos Pilotos')
-    for i, p in enumerate(st.session_state['pilotos']):
-        nova_cor = st.sidebar.color_picker(f'Cor do {p["piloto"]}', st.session_state['cores'][i])
-        st.session_state['cores'][i] = nova_cor
+        # Entrada de Hectares Diários
+        st.title('Entrada de Hectares Diários')
+        data = st.date_input('Data')
+        hectares = st.number_input('Hectares', min_value=0.0, format='%f')
 
-    if st.session_state['pilotos']:
-        df = pd.DataFrame(st.session_state['pilotos'])
-        df['inicio_safra'] = pd.to_datetime(df['inicio_safra'], format='%d/%m/%Y')
-        df['fim_safra'] = pd.to_datetime(df['fim_safra'], format='%d/%m/%Y')
-        df['duracao_safra'] = (df['fim_safra'] - df['inicio_safra']).dt.days
-        df['media_hectares_dia'] = df['hectares'] / df['duracao_safra']
-        df['media_hectares_dia'] = df['media_hectares_dia'].round(2)
+        if st.button('Adicionar Hectares'):
+            if data and hectares:
+                st.session_state['pilotos'][piloto_atual].append({'data': data, 'hectares': hectares})
+                st.success('Hectares adicionados com sucesso!')
+            else:
+                st.error('Por favor, preencha todos os campos.')
 
-        st.write(df)
+        # Mostrar Dados e Gráfico
+        st.title('Dados de Hectares')
+        df = pd.DataFrame(st.session_state['pilotos'][piloto_atual])
+        if not df.empty:
+            st.write(df)
 
-        fig = gerar_grafico(df, st.session_state['cores'])
+            fig = gerar_grafico(df, 'blue')
 
-        # Adicionar logomarca ao gráfico
-        if os.path.exists(logo_path):
-            buf_final = adicionar_logomarca(fig, logo_path)
-            st.image(buf_final)
-        else:
-            st.pyplot(fig)
+            # Adicionar logomarca ao gráfico
+            if os.path.exists(logo_path):
+                buf_final = adicionar_logomarca(fig, logo_path)
+                st.image(buf_final)
+            else:
+                st.pyplot(fig)
 
-        # Botão para baixar o gráfico
-        if os.path.exists(logo_path):
-            st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico
+            # Botão para baixar o gráfico
+            if os.path.exists(logo_path):
+                st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png")
+            else:
+                buf = salvar_grafico(fig)
+                st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
+
+if __name__ == '__main__':
+    main()
