@@ -267,12 +267,31 @@ def main():
         if st.sidebar.button('Adicionar Hectares'):
             piloto_atual = st.session_state["usuario_logado"]
             if piloto_atual:
-                pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares})
-                salvar_dados(arquivo_pilotos, pilotos)
-                st.sidebar.success(f'{hectares} hectares adicionados para {piloto_atual} em {data}')
-                st.write(f'{hectares} hectares adicionados para {piloto_atual} em {data}')
+                dados_piloto = pilotos[piloto_atual]
+                datas_existentes = [dado['data'] for dado in dados_piloto]
+                if str(data) not in datas_existentes:
+                    pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares})
+                    salvar_dados(arquivo_pilotos, pilotos)
+                    st.sidebar.success(f'{hectares} hectares adicionados para {piloto_atual} em {data}')
+                    st.write(f'{hectares} hectares adicionados para {piloto_atual} em {data}')
+                else:
+                    st.sidebar.error('Já existe uma entrada para essa data. Por favor, edite a entrada existente.')
             else:
                 st.sidebar.error('Erro ao identificar o piloto.')
+
+        # Editar dados de hectares
+        st.sidebar.subheader('Editar Dados de Hectares')
+        dados_piloto = pilotos.get(st.session_state["usuario_logado"], [])
+        if dados_piloto:
+            df_piloto = pd.DataFrame(dados_piloto)
+            selected_date = st.sidebar.selectbox('Selecione a data para editar', df_piloto['data'])
+            new_hectares = st.sidebar.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f")
+            if st.sidebar.button('Salvar Alterações'):
+                for dado in pilotos[st.session_state["usuario_logado"]]:
+                    if dado['data'] == selected_date:
+                        dado['hectares'] = new_hectares
+                salvar_dados(arquivo_pilotos, pilotos)
+                st.sidebar.success('Dados atualizados com sucesso!')
 
         # Alterar nome e senha do piloto
         st.sidebar.subheader('Alterar Nome e Senha')
