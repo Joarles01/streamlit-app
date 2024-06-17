@@ -51,6 +51,13 @@ def adicionar_logomarca(fig, logo_path):
 
     return buf_final
 
+# Função para salvar o gráfico
+def salvar_grafico(fig):
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    return buf
+
 # Função principal do aplicativo
 def main():
     st.set_page_config(page_title="PILOTOS DS DRONES", page_icon="drone_icon.png", layout="wide")
@@ -67,60 +74,104 @@ def main():
     if 'pilotos' not in st.session_state:
         st.session_state['pilotos'] = {}
     if 'cores' not in st.session_state:
-        st.session_state['cores'] = []
+        st.session_state['cores'] = {}
 
-    # Login ou Cadastro de Pilotos
-    st.sidebar.title('Login/Cadastro de Piloto')
-    piloto_nome = st.sidebar.text_input('Nome do Piloto')
+    # Seleção de painel (Administrador ou Piloto)
+    painel = st.sidebar.selectbox("Selecione o Painel", ["Administrador", "Piloto"])
 
-    if st.sidebar.button('Login/Cadastrar'):
-        if piloto_nome:
-            if piloto_nome not in st.session_state['pilotos']:
-                st.session_state['pilotos'][piloto_nome] = []
-                st.session_state['cores'].append('#1f77b4')  # Cor padrão azul
-                st.sidebar.success(f'Piloto {piloto_nome} cadastrado com sucesso!')
-            st.session_state['piloto_atual'] = piloto_nome
-            st.sidebar.success(f'Piloto {piloto_nome} logado com sucesso!')
+    if painel == "Administrador":
+        st.sidebar.title('Painel do Administrador')
+        
+        # Mostrar gráfico agregando dados de todos os pilotos
+        st.title('Dados de Todos os Pilotos')
+        
+        if st.session_state['pilotos']:
+            df_total = pd.DataFrame()
+            for piloto, dados in st.session_state['pilotos'].items():
+                df_piloto = pd.DataFrame(dados)
+                df_piloto['piloto'] = piloto
+                df_total = pd.concat([df_total, df_piloto])
+
+            if not df_total.empty:
+                st.write(df_total)
+
+                fig, ax = plt.subplots(figsize=(14, 8))
+                for piloto, group_data in df_total.groupby('piloto'):
+                    ax.plot(group_data['data'], group_data['hectares'], marker='o', linestyle='-', label=piloto)
+                
+                ax.set_ylabel('Hectares')
+                ax.set_xlabel('Data')
+                ax.set_title('Quantidade de Hectares Aplicada Diariamente por Piloto')
+                ax.legend()
+                fig.autofmt_xdate()
+
+                # Adicionar logomarca ao gráfico
+                if os.path.exists(logo_path):
+                    buf_final = adicionar_logomarca(fig, logo_path)
+                    st.image(buf_final)
+                else:
+                    st.pyplot(fig)
+
+                # Botão para baixar o gráfico
+                if os.path.exists(logo_path):
+                    st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png")
+                else:
+                    buf = salvar_grafico(fig)
+                    st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
         else:
-            st.sidebar.error('Por favor, insira o nome do piloto.')
+            st.write("Nenhum dado de piloto disponível.")
 
-    if 'piloto_atual' in st.session_state:
-        piloto_atual = st.session_state['piloto_atual']
-        st.write(f'Piloto atual: {piloto_atual}')
+    elif painel == "Piloto":
+        st.sidebar.title('Login/Cadastro de Piloto')
+        piloto_nome = st.sidebar.text_input('Nome do Piloto')
 
-        # Entrada de Hectares Diários
-        st.title('Entrada de Hectares Diários')
-        data = st.date_input('Data')
-        hectares = st.number_input('Hectares', min_value=0.0, format='%f')
-
-        if st.button('Adicionar Hectares'):
-            if data and hectares:
-                st.session_state['pilotos'][piloto_atual].append({'data': data, 'hectares': hectares})
-                st.success('Hectares adicionados com sucesso!')
+        if st.sidebar.button('Login/Cadastrar'):
+            if piloto_nome:
+                if piloto_nome not in st.session_state['pilotos']:
+                    st.session_state['pilotos'][piloto_nome] = []
+                    st.sidebar.success(f'Piloto {piloto_nome} cadastrado com sucesso!')
+                st.session_state['piloto_atual'] = piloto_nome
+                st.sidebar.success(f'Piloto {piloto_nome} logado com sucesso!')
             else:
-                st.error('Por favor, preencha todos os campos.')
+                st.sidebar.error('Por favor, insira o nome do piloto.')
 
-        # Mostrar Dados e Gráfico
-        st.title('Dados de Hectares')
-        df = pd.DataFrame(st.session_state['pilotos'][piloto_atual])
-        if not df.empty:
-            st.write(df)
+        if 'piloto_atual' in st.session_state:
+            piloto_atual = st.session_state['piloto_atual']
+            st.write(f'Piloto atual: {piloto_atual}')
 
-            fig = gerar_grafico(df, 'blue')
+            # Entrada de Hectares Diários
+            st.title('Entrada de Hectares Diários')
+            data = st.date_input('Data')
+            hectares = st.number_input('Hectares', min_value=0.0, format='%f')
 
-            # Adicionar logomarca ao gráfico
-            if os.path.exists(logo_path):
-                buf_final = adicionar_logomarca(fig, logo_path)
-                st.image(buf_final)
-            else:
-                st.pyplot(fig)
+            if st.button('Adicionar Hectares'):
+                if data and hectares:
+                    st.session_state['pilotos'][piloto_atual].append({'data': data, 'hectares': hectares})
+                    st.success('Hectares adicionados com sucesso!')
+                else:
+                    st.error('Por favor, preencha todos os campos.')
 
-            # Botão para baixar o gráfico
-            if os.path.exists(logo_path):
-                st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png")
-            else:
-                buf = salvar_grafico(fig)
-                st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
+            # Mostrar Dados e Gráfico
+            st.title('Dados de Hectares')
+            df = pd.DataFrame(st.session_state['pilotos'][piloto_atual])
+            if not df.empty:
+                st.write(df)
+
+                fig = gerar_grafico(df, 'blue')
+
+                # Adicionar logomarca ao gráfico
+                if os.path.exists(logo_path):
+                    buf_final = adicionar_logomarca(fig, logo_path)
+                    st.image(buf_final)
+                else:
+                    st.pyplot(fig)
+
+                # Botão para baixar o gráfico
+                if os.path.exists(logo_path):
+                    st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png")
+                else:
+                    buf = salvar_grafico(fig)
+                    st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
 
 if __name__ == '__main__':
     main()
