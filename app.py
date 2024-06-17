@@ -199,4 +199,9 @@ def main():
                 ).reset_index()
                 st.write(stats)
         else:
-            st.write("Nenhum dado
+            st.write("Nenhum dado de piloto disponível.")
+
+    elif painel == "Piloto":
+        st.sidebar.title('Painel do Piloto')
+        st.sidebar.success(f'Logado como {piloto_atual}')
+        st.write(f'Piloto atual: {piloto_atual
