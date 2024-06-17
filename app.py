@@ -190,24 +190,4 @@ def main():
         st.sidebar.success(f'Logado como {piloto_atual}')
         st.write(f'Piloto atual: {piloto_atual}')
 
-        # Entrada de Hectares Diários
-        st.title('Entrada de Hectares Diários')
-        data = st.date_input('Data')
-        hectares = st.number_input('Hectares', min_value=0.0, format='%f')
-
-        if st.button('Adicionar Hectares'):
-            if data and hectares:
-                st.session_state['pilotos'][piloto_atual].append({'data': data, 'hectares': hectares})
-                st.success('Hectares adicionados com sucesso!')
-            else:
-                st.error('Por favor, preencha todos os campos.')
-
-        # Mostrar Dados e Gráfico
-        st.title('Dados de Hectares')
-        df = pd.DataFrame(st.session_state['pilotos'][piloto_atual])
-        if not df.empty:
-            st.write(df)
-
-            fig = gerar_grafico(df, 'blue')
-
-            # Adicionar logom
+        # Entrada de
