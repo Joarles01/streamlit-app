@@ -96,6 +96,7 @@ def main():
     # Identificar se é administrador ou piloto baseado no URL
     query_params = st.experimental_get_query_params()
     token = query_params.get("token", [None])[0]
+    st.write(f"Token: {token}")
 
     if token is None:
         st.sidebar.title('Login de Administrador')
@@ -162,6 +163,7 @@ def main():
                 df_total = pd.concat([df_total, df_piloto])
 
             if not df_total.empty:
+                st.write("Dados agregados dos pilotos:")
                 st.write(df_total)
 
                 fig, ax = plt.subplots(figsize=(14, 8))
@@ -197,8 +199,4 @@ def main():
                 ).reset_index()
                 st.write(stats)
         else:
-            st.write("Nenhum dado de piloto disponível.")
-
-    elif painel == "Piloto":
-        st.sidebar.title('Painel do Piloto')
-        st.sidebar.success
+            st.write("Nenhum dado
