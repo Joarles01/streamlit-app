@@ -8,6 +8,7 @@ import hashlib
 
 # Função para gerar o gráfico
 def gerar_grafico(df, colors):
+    st.write("Gerando gráfico...")
     fig, ax = plt.subplots(figsize=(10, 6))
 
     bars = ax.bar(df['data'], df['hectares'], color=colors, alpha=0.6)
@@ -24,6 +25,7 @@ def gerar_grafico(df, colors):
 
 # Função para adicionar logomarca ao gráfico
 def adicionar_logomarca(fig, logo_path):
+    st.write("Adicionando logomarca ao gráfico...")
     # Salvar o gráfico em um objeto BytesIO
     buf = BytesIO()
     fig.savefig(buf, format='png')
@@ -54,6 +56,7 @@ def adicionar_logomarca(fig, logo_path):
 
 # Função para salvar o gráfico
 def salvar_grafico(fig):
+    st.write("Salvando gráfico...")
     buf = BytesIO()
     fig.savefig(buf, format="png")
     buf.seek(0)
@@ -61,27 +64,34 @@ def salvar_grafico(fig):
 
 # Função para gerar um token simples
 def gerar_token(piloto_nome):
+    st.write(f"Gerando token para o piloto {piloto_nome}...")
     return hashlib.sha256(piloto_nome.encode()).hexdigest()
 
 # Função principal do aplicativo
 def main():
-    st.set_page_config(page_title="PILOTOS DS DRONES", page_icon="drone_icon.png", layout="wide")
+    st.set_page_config(page_title="PILOTOS DS DRONES", page_icon=":helicopter:", layout="wide")
     st.title('PILOTOS DS DRONES')
+    st.write("Iniciando aplicação...")
 
     # Adicionar o logotipo da empresa na barra lateral
     logo_path = "logo.png"  # Caminho relativo do logotipo
     if os.path.exists(logo_path):
         st.sidebar.image(logo_path, use_column_width=True)
+        st.write("Logotipo carregado.")
     else:
         st.sidebar.write("Logotipo não encontrado. Verifique o caminho do arquivo.")
+        st.write("Logotipo não encontrado.")
 
     # Inicializar a lista de pilotos e cores no session_state
     if 'pilotos' not in st.session_state:
         st.session_state['pilotos'] = {}
+        st.write("Inicializando lista de pilotos.")
     if 'cores' not in st.session_state:
         st.session_state['cores'] = {}
+        st.write("Inicializando lista de cores.")
     if 'tokens' not in st.session_state:
         st.session_state['tokens'] = {}
+        st.write("Inicializando lista de tokens.")
 
     # Identificar se é administrador ou piloto baseado no URL
     query_params = st.experimental_get_query_params()
@@ -94,6 +104,7 @@ def main():
         if admin_password == "admin123":  # Senha fixa para demonstração
             st.sidebar.success("Login de Administrador bem-sucedido")
             painel = "Administrador"
+            st.write("Logado como administrador.")
         else:
             st.sidebar.error("Senha incorreta")
             st.stop()  # Para evitar a execução do restante do código
@@ -103,6 +114,7 @@ def main():
         if piloto_atual is None:
             st.error("Token inválido")
             st.stop()  # Para evitar a execução do restante do código
+        st.write(f"Logado como piloto: {piloto_atual}")
 
     if painel == "Administrador":
         st.sidebar.title('Painel do Administrador')
@@ -120,6 +132,7 @@ def main():
                     link = f"{base_url}?token={token}"
                     st.sidebar.success(f'Piloto {novo_piloto} cadastrado com sucesso!')
                     st.sidebar.write(f"Link para {novo_piloto}: {link}")
+                    st.write(f"Piloto {novo_piloto} cadastrado com sucesso! Link: {link}")
                 else:
                     st.sidebar.error('Piloto já existe')
             else:
@@ -134,6 +147,7 @@ def main():
                     del st.session_state['pilotos'][piloto_remover]
                     del st.session_state['tokens'][piloto_remover]
                     st.sidebar.success(f'Piloto {piloto_remover} removido com sucesso!')
+                    st.write(f"Piloto {piloto_remover} removido com sucesso!")
                 else:
                     st.sidebar.error('Piloto não encontrado')
 
@@ -190,4 +204,4 @@ def main():
         st.sidebar.success(f'Logado como {piloto_atual}')
         st.write(f'Piloto atual: {piloto_atual}')
 
-        # Entrada de
+        # Entrada de Hect
