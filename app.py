@@ -9,18 +9,28 @@ import hashlib
 # Função para gerar o gráfico
 def gerar_grafico(df, colors):
     st.write("Gerando gráfico...")
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
 
-    bars = ax.bar(df['data'], df['hectares'], color=colors, alpha=0.6)
-    for bar in bars:
-        yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, yval, round(yval, 2), ha='center', va='bottom')
+    # Total de hectares
+    df.groupby('piloto')['hectares'].sum().plot(kind='bar', ax=axs[0], color=colors)
+    axs[0].set_title('Total de Hectares Aplicado')
+    axs[0].set_ylabel('Total de Hectares')
 
-    ax.set_ylabel('Hectares')
-    ax.set_xlabel('Data')
-    ax.set_title('Quantidade de Hectares Aplicada Diariamente')
-    fig.autofmt_xdate()
+    # Média de hectares por dia
+    df.groupby('piloto')['hectares'].mean().plot(kind='bar', ax=axs[1], color=colors)
+    axs[1].set_title('Média de Hectares por Dia')
+    axs[1].set_ylabel('Média de Hectares')
 
+    # Total de dias
+    df.groupby('piloto')['data'].count().plot(kind='bar', ax=axs[2], color=colors)
+    axs[2].set_title('Total de Dias de Aplicação')
+    axs[2].set_ylabel('Total de Dias')
+
+    for ax in axs:
+        ax.set_xlabel('Pilotos')
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+
+    fig.tight_layout()
     return fig
 
 # Função para adicionar logomarca ao gráfico
@@ -161,22 +171,13 @@ def main():
                 st.write("Dados agregados dos pilotos:")
                 st.write(df_total)
 
-                fig, ax = plt.subplots(figsize=(14, 8))
-                for piloto, group_data in df_total.groupby('piloto'):
-                    ax.plot(group_data['data'], group_data['hectares'], marker='o', linestyle='-', label=piloto)
-                
-                ax.set_ylabel('Hectares')
-                ax.set_xlabel('Data')
-                ax.set_title('Quantidade de Hectares Aplicada Diariamente por Piloto')
-                ax.legend()
-                fig.autofmt_xdate()
+                fig = gerar_grafico(df_total, 'skyblue')
+                st.pyplot(fig)
 
                 # Adicionar logomarca ao gráfico
                 if os.path.exists(logo_path):
                     buf_final = adicionar_logomarca(fig, logo_path)
                     st.image(buf_final)
-                else:
-                    st.pyplot(fig)
 
                 # Botão para baixar o gráfico
                 if os.path.exists(logo_path):
