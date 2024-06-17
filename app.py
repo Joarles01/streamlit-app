@@ -67,6 +67,14 @@ def gerar_token(piloto_nome):
     st.write(f"Gerando token para o piloto {piloto_nome}...")
     return hashlib.sha256(piloto_nome.encode()).hexdigest()
 
+# Função para gerar um hash de senha
+def gerar_hash_senha(senha):
+    return hashlib.sha256(senha.encode()).hexdigest()
+
+# Função para verificar se o hash da senha fornecida corresponde ao hash armazenado
+def verificar_senha(senha, hash_senha):
+    return gerar_hash_senha(senha) == hash_senha
+
 # Função principal do aplicativo
 def main():
     st.set_page_config(page_title="PILOTOS DS DRONES", page_icon=":helicopter:", layout="wide")
@@ -92,65 +100,79 @@ def main():
     if 'tokens' not in st.session_state:
         st.session_state['tokens'] = {}
         st.write("Inicializando lista de tokens.")
+    if 'usuarios' not in st.session_state:
+        st.session_state['usuarios'] = {}
+        st.write("Inicializando lista de usuários.")
 
-    # Identificar se é administrador ou piloto baseado no URL
-    query_params = st.experimental_get_query_params()
-    token = query_params.get("token", [None])[0]
-    st.write(f"Token: {token}")
+    # Página de login
+    st.sidebar.title("Login")
+    username = st.sidebar.text_input("Usuário")
+    password = st.sidebar.text_input("Senha", type="password")
+    login_button = st.sidebar.button("Login")
 
-    if token is None:
-        st.sidebar.title('Login de Administrador')
-        admin_password = st.sidebar.text_input("Senha do Administrador", type="password")
-        
-        if admin_password == "admin123":  # Senha fixa para demonstração
-            st.sidebar.success("Login de Administrador bem-sucedido")
-            painel = "Administrador"
-            st.write("Logado como administrador.")
+    if login_button:
+        if username in st.session_state['usuarios']:
+            stored_password_hash = st.session_state['usuarios'][username]['senha']
+            if verificar_senha(password, stored_password_hash):
+                st.session_state['usuario_logado'] = username
+                st.session_state['painel'] = st.session_state['usuarios'][username]['tipo']
+                st.sidebar.success(f"Bem-vindo, {username}!")
+            else:
+                st.sidebar.error("Senha incorreta")
         else:
-            st.sidebar.error("Senha incorreta")
-            st.stop()  # Para evitar a execução do restante do código
-    else:
-        painel = "Piloto"
-        piloto_atual = next((piloto for piloto, t in st.session_state['tokens'].items() if t == token), None)
-        if piloto_atual is None:
-            st.error("Token inválido")
-            st.stop()  # Para evitar a execução do restante do código
-        st.write(f"Logado como piloto: {piloto_atual}")
+            st.sidebar.error("Usuário não encontrado")
 
-    if painel == "Administrador":
-        st.sidebar.title('Painel do Administrador')
+    # Cadastro de novos usuários (administradores e pilotos)
+    st.sidebar.title("Cadastrar Novo Usuário")
+    new_username = st.sidebar.text_input("Novo Usuário")
+    new_password = st.sidebar.text_input("Nova Senha", type="password")
+    user_type = st.sidebar.selectbox("Tipo de Usuário", ["Administrador", "Piloto"])
+    register_button = st.sidebar.button("Cadastrar")
+
+    if register_button:
+        if new_username and new_password:
+            if new_username not in st.session_state['usuarios']:
+                st.session_state['usuarios'][new_username] = {
+                    'senha': gerar_hash_senha(new_password),
+                    'tipo': user_type
+                }
+                st.sidebar.success(f"Usuário {new_username} cadastrado com sucesso!")
+            else:
+                st.sidebar.error("Usuário já existe")
+        else:
+            st.sidebar.error("Por favor, insira um nome de usuário e uma senha")
+
+    # Painel do Administrador
+    if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
+        st.title("Painel do Administrador")
 
         # Adicionar piloto
-        st.sidebar.subheader('Adicionar Piloto')
-        novo_piloto = st.sidebar.text_input('Nome do Novo Piloto')
-        if st.sidebar.button('Adicionar Piloto'):
+        st.subheader('Adicionar Piloto')
+        novo_piloto = st.text_input('Nome do Novo Piloto')
+        if st.button('Adicionar Piloto'):
             if novo_piloto:
                 if novo_piloto not in st.session_state['pilotos']:
                     st.session_state['pilotos'][novo_piloto] = []
                     token = gerar_token(novo_piloto)
                     st.session_state['tokens'][novo_piloto] = token
-                    base_url = st.experimental_get_query_params().get('base', [''])[0]
-                    link = f"{base_url}?token={token}"
-                    st.sidebar.success(f'Piloto {novo_piloto} cadastrado com sucesso!')
-                    st.sidebar.write(f"Link para {novo_piloto}: {link}")
-                    st.write(f"Piloto {novo_piloto} cadastrado com sucesso! Link: {link}")
+                    st.success(f'Piloto {novo_piloto} cadastrado com sucesso!')
+                    st.write(f"Token para {novo_piloto}: {token}")
                 else:
-                    st.sidebar.error('Piloto já existe')
+                    st.error('Piloto já existe')
             else:
-                st.sidebar.error('Por favor, insira o nome do piloto.')
+                st.error('Por favor, insira o nome do piloto.')
 
         # Remover piloto
-        st.sidebar.subheader('Remover Piloto')
+        st.subheader('Remover Piloto')
         if st.session_state['pilotos']:
-            piloto_remover = st.sidebar.selectbox('Selecione o Piloto para Remover', list(st.session_state['pilotos'].keys()))
-            if st.sidebar.button('Remover Piloto'):
+            piloto_remover = st.selectbox('Selecione o Piloto para Remover', list(st.session_state['pilotos'].keys()))
+            if st.button('Remover Piloto'):
                 if piloto_remover in st.session_state['pilotos']:
                     del st.session_state['pilotos'][piloto_remover]
                     del st.session_state['tokens'][piloto_remover]
-                    st.sidebar.success(f'Piloto {piloto_remover} removido com sucesso!')
-                    st.write(f"Piloto {piloto_remover} removido com sucesso!")
+                    st.success(f'Piloto {piloto_remover} removido com sucesso!')
                 else:
-                    st.sidebar.error('Piloto não encontrado')
+                    st.error('Piloto não encontrado')
 
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
@@ -201,10 +223,11 @@ def main():
         else:
             st.write("Nenhum dado de piloto disponível.")
 
-    elif painel == "Piloto":
+    # Painel do Piloto
+    if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Piloto":
         st.sidebar.title('Painel do Piloto')
-        st.sidebar.success(f'Logado como {piloto_atual}')
-        st.write(f'Piloto atual: {piloto_atual}')
+        st.sidebar.success(f'Logado como {st.session_state["usuario_logado"]}')
+        st.write(f'Piloto atual: {st.session_state["usuario_logado"]}')
 
         # Entrada de Hectares
         st.sidebar.subheader('Entrada de Hectares')
@@ -212,6 +235,7 @@ def main():
         hectares = st.sidebar.number_input('Hectares', min_value=0.0, format="%.2f")
         
         if st.sidebar.button('Adicionar Hectares'):
+            piloto_atual = st.session_state["usuario_logado"]
             if piloto_atual:
                 if 'hectares' not in st.session_state['pilotos'][piloto_atual]:
                     st.session_state['pilotos'][piloto_atual] = []
@@ -222,8 +246,8 @@ def main():
                 st.sidebar.error('Erro ao identificar o piloto.')
 
         # Mostrar os dados do piloto atual
-        st.title(f'Dados do Piloto: {piloto_atual}')
-        dados_piloto = st.session_state['pilotos'].get(piloto_atual, [])
+        st.title(f'Dados do Piloto: {st.session_state["usuario_logado"]}')
+        dados_piloto = st.session_state['pilotos'].get(st.session_state["usuario_logado"], [])
 
         if dados_piloto:
             df_piloto = pd.DataFrame(dados_piloto)
@@ -245,6 +269,6 @@ def main():
                 st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
         else:
             st.write("Nenhum dado disponível para este piloto.")
-        
+
 if __name__ == "__main__":
     main()
