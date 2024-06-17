@@ -214,4 +214,3 @@ def main():
             if os.path.exists(logo_path):
                 buf_final = adicionar_logomarca(fig, logo_path)
                 st.image(buf_final)
-            else:
