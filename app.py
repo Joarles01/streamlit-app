@@ -204,4 +204,5 @@ def main():
         st.sidebar.success(f'Logado como {piloto_atual}')
         st.write(f'Piloto atual: {piloto_atual}')
 
-        # Entrada de Hect
+        # Entrada de Hectares Diários
+       
