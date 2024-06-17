@@ -116,7 +116,7 @@ def main():
                     st.session_state['pilotos'][novo_piloto] = []
                     token = gerar_token(novo_piloto)
                     st.session_state['tokens'][novo_piloto] = token
-                    link = f"{st.experimental_get_query_params()['base'][0]}?token={token}"
+                    link = f"{st.experimental_get_query_params().get('base', [''])[0]}?token={token}"
                     st.sidebar.success(f'Piloto {novo_piloto} cadastrado com sucesso!')
                     st.sidebar.write(f"Link para {novo_piloto}: {link}")
                 else:
@@ -197,5 +197,20 @@ def main():
             if data and hectares:
                 st.session_state['pilotos'][piloto_atual].append({'data': data, 'hectares': hectares})
                 st.success('Hectares adicionados com sucesso!')
+            else:
+                st.error('Por favor, preencha todos os campos.')
+
+        # Mostrar Dados e Gráfico
+        st.title('Dados de Hectares')
+        df = pd.DataFrame(st.session_state['pilotos'][piloto_atual])
+        if not df.empty:
+            st.write(df)
+
+            fig = gerar_grafico(df, 'blue')
+
+            # Adicionar logomarca ao gráfico
+            if os.path.exists(logo_path):
+                buf_final = adicionar_logomarca(fig, logo_path)
+                st.image(buf_final)
             else:
                 st
