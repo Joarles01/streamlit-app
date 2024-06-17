@@ -238,6 +238,11 @@ def main():
                     total_dias=pd.NamedAgg(column='data', aggfunc='count')
                 ).reset_index()
                 st.write(stats)
+                
+                # Mostrar o total de hectares aplicados por todos os pilotos
+                total_hectares_todos = df_total['hectares'].sum()
+                st.subheader(f"Total de Hectares Aplicados por Todos os Pilotos: {total_hectares_todos}")
+
         else:
             st.write("Nenhum dado de piloto disponível.")
 
@@ -307,7 +312,7 @@ def main():
         st.title(f'Dados do Piloto: {st.session_state["usuario_logado"]}')
         foto_piloto = fotos.get(st.session_state["usuario_logado"])
         if foto_piloto and os.path.exists(foto_piloto):
-            st.image(foto_piloto, caption="Foto de Perfil", use_column_width=True)
+            st.image(foto_piloto, caption="Foto de Perfil", use_column_width=True, width=150)
 
         dados_piloto = pilotos.get(st.session_state["usuario_logado"], [])
 
