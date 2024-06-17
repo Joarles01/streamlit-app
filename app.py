@@ -29,22 +29,21 @@ def verificar_senha(senha, hash_senha):
     return gerar_hash_senha(senha) == hash_senha
 
 # Função para adicionar logomarca ao gráfico
-def adicionar_logomarca(fig, logo_path):
+def adicionar_logomarca(fig, logo_image):
     st.write("Adicionando logomarca ao gráfico...")
     buf = BytesIO()
     fig.savefig(buf, format='png')
     buf.seek(0)
 
     imagem_grafico = Image.open(buf)
-    logomarca = Image.open(logo_path).convert("RGBA")
 
-    largura_logo, altura_logo = logomarca.size
+    largura_logo, altura_logo = logo_image.size
     largura_nova = 100
     altura_nova = int((altura_logo / largura_logo) * largura_nova)
-    logomarca = logomarca.resize((largura_nova, altura_nova), Image.LANCZOS)
+    logo_image = logo_image.resize((largura_nova, altura_nova), Image.LANCZOS)
 
     posicao_logo = (imagem_grafico.width - largura_nova - 10, imagem_grafico.height - altura_nova - 10)
-    imagem_grafico.paste(logomarca, posicao_logo, logomarca)
+    imagem_grafico.paste(logo_image, posicao_logo, logo_image)
 
     buf_final = BytesIO()
     imagem_grafico.save(buf_final, format='png')
@@ -220,15 +219,19 @@ def main():
 
                 # Adicionar logomarca ao gráfico (com a opção de escolher uma logo diferente)
                 logo_upload = st.file_uploader("Carregar nova logomarca para o gráfico", type=["png", "jpg", "jpeg"])
+                logo_image = None
                 if logo_upload is not None:
-                    logo_path = logo_upload
+                    logo_image = Image.open(logo_upload)
 
-                if os.path.exists(logo_path):
-                    buf_final = adicionar_logomarca(fig, logo_path)
+                if logo_image is None and os.path.exists(logo_path):
+                    logo_image = Image.open(logo_path)
+
+                if logo_image is not None:
+                    buf_final = adicionar_logomarca(fig, logo_image)
                     st.image(buf_final)
 
                 # Botão para baixar o gráfico
-                if os.path.exists(logo_path):
+                if logo_image is not None:
                     st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png")
                 else:
                     buf = salvar_grafico(fig)
@@ -316,7 +319,7 @@ def main():
         st.title(f'Dados do Piloto: {st.session_state["usuario_logado"]}')
         foto_piloto = fotos.get(st.session_state["usuario_logado"])
         if foto_piloto and os.path.exists(foto_piloto):
-            st.image(foto_piloto, caption="Foto de Perfil", use_column_width=True, width=150)
+            st.image(foto_piloto, caption="Foto de Perfil", use_column_width=False, width=150)
 
         dados_piloto = pilotos.get(st.session_state["usuario_logado"], [])
 
