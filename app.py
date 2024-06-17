@@ -101,8 +101,13 @@ def main():
         st.session_state['tokens'] = {}
         st.write("Inicializando lista de tokens.")
     if 'usuarios' not in st.session_state:
-        st.session_state['usuarios'] = {}
-        st.write("Inicializando lista de usuários.")
+        st.session_state['usuarios'] = {
+            'admin123': {
+                'senha': gerar_hash_senha('admin123'),
+                'tipo': 'Administrador'
+            }
+        }
+        st.write("Inicializando lista de usuários com administrador padrão.")
 
     # Página de login
     st.sidebar.title("Login")
@@ -123,24 +128,25 @@ def main():
             st.sidebar.error("Usuário não encontrado")
 
     # Cadastro de novos usuários (administradores e pilotos)
-    st.sidebar.title("Cadastrar Novo Usuário")
-    new_username = st.sidebar.text_input("Novo Usuário")
-    new_password = st.sidebar.text_input("Nova Senha", type="password")
-    user_type = st.sidebar.selectbox("Tipo de Usuário", ["Administrador", "Piloto"])
-    register_button = st.sidebar.button("Cadastrar")
+    if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
+        st.sidebar.title("Cadastrar Novo Usuário")
+        new_username = st.sidebar.text_input("Novo Usuário")
+        new_password = st.sidebar.text_input("Nova Senha", type="password")
+        user_type = st.sidebar.selectbox("Tipo de Usuário", ["Administrador", "Piloto"])
+        register_button = st.sidebar.button("Cadastrar")
 
-    if register_button:
-        if new_username and new_password:
-            if new_username not in st.session_state['usuarios']:
-                st.session_state['usuarios'][new_username] = {
-                    'senha': gerar_hash_senha(new_password),
-                    'tipo': user_type
-                }
-                st.sidebar.success(f"Usuário {new_username} cadastrado com sucesso!")
+        if register_button:
+            if new_username and new_password:
+                if new_username not in st.session_state['usuarios']:
+                    st.session_state['usuarios'][new_username] = {
+                        'senha': gerar_hash_senha(new_password),
+                        'tipo': user_type
+                    }
+                    st.sidebar.success(f"Usuário {new_username} cadastrado com sucesso!")
+                else:
+                    st.sidebar.error("Usuário já existe")
             else:
-                st.sidebar.error("Usuário já existe")
-        else:
-            st.sidebar.error("Por favor, insira um nome de usuário e uma senha")
+                st.sidebar.error("Por favor, insira um nome de usuário e uma senha")
 
     # Painel do Administrador
     if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
