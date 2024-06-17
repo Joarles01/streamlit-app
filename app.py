@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 from PIL import Image, ImageDraw
 import os
+import hashlib
 
 # Função para gerar o gráfico
 def gerar_grafico(df, colors):
@@ -58,6 +59,10 @@ def salvar_grafico(fig):
     buf.seek(0)
     return buf
 
+# Função para gerar um token simples
+def gerar_token(piloto_nome):
+    return hashlib.sha256(piloto_nome.encode()).hexdigest()
+
 # Função principal do aplicativo
 def main():
     st.set_page_config(page_title="PILOTOS DS DRONES", page_icon="drone_icon.png", layout="wide")
@@ -75,13 +80,61 @@ def main():
         st.session_state['pilotos'] = {}
     if 'cores' not in st.session_state:
         st.session_state['cores'] = {}
+    if 'tokens' not in st.session_state:
+        st.session_state['tokens'] = {}
 
-    # Seleção de painel (Administrador ou Piloto)
-    painel = st.sidebar.selectbox("Selecione o Painel", ["Administrador", "Piloto"])
+    # Identificar se é administrador ou piloto baseado no URL
+    query_params = st.experimental_get_query_params()
+    token = query_params.get("token", [None])[0]
+
+    if token is None:
+        st.sidebar.title('Login de Administrador')
+        admin_password = st.sidebar.text_input("Senha do Administrador", type="password")
+        
+        if admin_password == "admin123":  # Senha fixa para demonstração
+            st.sidebar.success("Login de Administrador bem-sucedido")
+            painel = "Administrador"
+        else:
+            st.sidebar.error("Senha incorreta")
+            return
+    else:
+        painel = "Piloto"
+        piloto_atual = next((piloto for piloto, t in st.session_state['tokens'].items() if t == token), None)
+        if piloto_atual is None:
+            st.error("Token inválido")
+            return
 
     if painel == "Administrador":
         st.sidebar.title('Painel do Administrador')
-        
+
+        # Adicionar piloto
+        st.sidebar.subheader('Adicionar Piloto')
+        novo_piloto = st.sidebar.text_input('Nome do Novo Piloto')
+        if st.sidebar.button('Adicionar Piloto'):
+            if novo_piloto:
+                if novo_piloto not in st.session_state['pilotos']:
+                    st.session_state['pilotos'][novo_piloto] = []
+                    token = gerar_token(novo_piloto)
+                    st.session_state['tokens'][novo_piloto] = token
+                    link = f"{st.experimental_get_query_params()['base'][0]}?token={token}"
+                    st.sidebar.success(f'Piloto {novo_piloto} cadastrado com sucesso!')
+                    st.sidebar.write(f"Link para {novo_piloto}: {link}")
+                else:
+                    st.sidebar.error('Piloto já existe')
+            else:
+                st.sidebar.error('Por favor, insira o nome do piloto.')
+
+        # Remover piloto
+        st.sidebar.subheader('Remover Piloto')
+        piloto_remover = st.sidebar.selectbox('Selecione o Piloto para Remover', list(st.session_state['pilotos'].keys()))
+        if st.sidebar.button('Remover Piloto'):
+            if piloto_remover in st.session_state['pilotos']:
+                del st.session_state['pilotos'][piloto_remover]
+                del st.session_state['tokens'][piloto_remover]
+                st.sidebar.success(f'Piloto {piloto_remover} removido com sucesso!')
+            else:
+                st.sidebar.error('Piloto não encontrado')
+
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
         
@@ -131,56 +184,18 @@ def main():
             st.write("Nenhum dado de piloto disponível.")
 
     elif painel == "Piloto":
-        st.sidebar.title('Login/Cadastro de Piloto')
-        piloto_nome = st.sidebar.text_input('Nome do Piloto')
+        st.sidebar.title('Painel do Piloto')
+        st.sidebar.success(f'Logado como {piloto_atual}')
+        st.write(f'Piloto atual: {piloto_atual}')
 
-        if st.sidebar.button('Login/Cadastrar'):
-            if piloto_nome:
-                if piloto_nome not in st.session_state['pilotos']:
-                    st.session_state['pilotos'][piloto_nome] = []
-                    st.sidebar.success(f'Piloto {piloto_nome} cadastrado com sucesso!')
-                st.session_state['piloto_atual'] = piloto_nome
-                st.sidebar.success(f'Piloto {piloto_nome} logado com sucesso!')
+        # Entrada de Hectares Diários
+        st.title('Entrada de Hectares Diários')
+        data = st.date_input('Data')
+        hectares = st.number_input('Hectares', min_value=0.0, format='%f')
+
+        if st.button('Adicionar Hectares'):
+            if data and hectares:
+                st.session_state['pilotos'][piloto_atual].append({'data': data, 'hectares': hectares})
+                st.success('Hectares adicionados com sucesso!')
             else:
-                st.sidebar.error('Por favor, insira o nome do piloto.')
-
-        if 'piloto_atual' in st.session_state:
-            piloto_atual = st.session_state['piloto_atual']
-            st.write(f'Piloto atual: {piloto_atual}')
-
-            # Entrada de Hectares Diários
-            st.title('Entrada de Hectares Diários')
-            data = st.date_input('Data')
-            hectares = st.number_input('Hectares', min_value=0.0, format='%f')
-
-            if st.button('Adicionar Hectares'):
-                if data and hectares:
-                    st.session_state['pilotos'][piloto_atual].append({'data': data, 'hectares': hectares})
-                    st.success('Hectares adicionados com sucesso!')
-                else:
-                    st.error('Por favor, preencha todos os campos.')
-
-            # Mostrar Dados e Gráfico
-            st.title('Dados de Hectares')
-            df = pd.DataFrame(st.session_state['pilotos'][piloto_atual])
-            if not df.empty:
-                st.write(df)
-
-                fig = gerar_grafico(df, 'blue')
-
-                # Adicionar logomarca ao gráfico
-                if os.path.exists(logo_path):
-                    buf_final = adicionar_logomarca(fig, logo_path)
-                    st.image(buf_final)
-                else:
-                    st.pyplot(fig)
-
-                # Botão para baixar o gráfico
-                if os.path.exists(logo_path):
-                    st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png")
-                else:
-                    buf = salvar_grafico(fig)
-                    st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
-
-if __name__ == '__main__':
-    main()
+                st
