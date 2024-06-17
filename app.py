@@ -62,7 +62,7 @@ def salvar_grafico(fig):
 
 # Função principal do aplicativo
 def main():
-    st.set_page_config(page_title="PILOTOS DS DRONES", page_icon=":helicopter:", layout="wide")
+    st.set_page_config(page_title="PILOTOS DS DRONES", page_icon=":drone:", layout="wide")
     st.title('PILOTOS DS DRONES')
     st.write("Iniciando aplicação...")
 
@@ -218,7 +218,11 @@ def main():
                 fig.tight_layout()
                 st.pyplot(fig)
 
-                # Adicionar logomarca ao gráfico
+                # Adicionar logomarca ao gráfico (com a opção de escolher uma logo diferente)
+                logo_upload = st.file_uploader("Carregar nova logomarca para o gráfico", type=["png", "jpg", "jpeg"])
+                if logo_upload is not None:
+                    logo_path = logo_upload
+
                 if os.path.exists(logo_path):
                     buf_final = adicionar_logomarca(fig, logo_path)
                     st.image(buf_final)
@@ -330,6 +334,8 @@ def main():
                 st.info("Você bateu a meta diária de 40 hectares! Vamos continuar assim e melhorar ainda mais!")
             else:
                 st.success("Parabéns! Você superou a meta diária de 40 hectares! Continue com o ótimo trabalho!")
+
+            st.subheader(f"Total de Hectares Aplicados: {hectares_totais}")
         else:
             st.write("Nenhum dado disponível para este piloto.")
 
