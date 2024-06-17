@@ -118,6 +118,15 @@ def main():
                 else:
                     buf = salvar_grafico(fig)
                     st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
+
+                # Mostrar estatísticas por piloto
+                st.title('Estatísticas por Piloto')
+                stats = df_total.groupby('piloto').agg(
+                    total_hectares=pd.NamedAgg(column='hectares', aggfunc='sum'),
+                    media_hectares_dia=pd.NamedAgg(column='hectares', aggfunc=lambda x: x.sum() / x.count()),
+                    total_dias=pd.NamedAgg(column='data', aggfunc='count')
+                ).reset_index()
+                st.write(stats)
         else:
             st.write("Nenhum dado de piloto disponível.")
 
