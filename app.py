@@ -6,42 +6,6 @@ from PIL import Image, ImageDraw
 import os
 import hashlib
 
-# Função para gerar o gráfico
-def gerar_grafico(df, cores_pilotos):
-    st.write("Gerando gráfico...")
-    fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
-
-    # Total de hectares
-    total_hectares = df.groupby('piloto')['hectares'].sum()
-    axs[0].bar(total_hectares.index, total_hectares.values, color=[cores_pilotos[piloto] for piloto in total_hectares.index])
-    axs[0].set_title('Total de Hectares Aplicado')
-    axs[0].set_ylabel('Total de Hectares')
-    for i, v in enumerate(total_hectares.values):
-        axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
-
-    # Média de hectares por dia
-    media_hectares = df.groupby('piloto')['hectares'].mean()
-    axs[1].bar(media_hectares.index, media_hectares.values, color=[cores_pilotos[piloto] for piloto in media_hectares.index])
-    axs[1].set_title('Média de Hectares por Dia')
-    axs[1].set_ylabel('Média de Hectares')
-    for i, v in enumerate(media_hectares.values):
-        axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
-
-    # Total de dias
-    total_dias = df.groupby('piloto')['data'].count()
-    axs[2].bar(total_dias.index, total_dias.values, color=[cores_pilotos[piloto] for piloto in total_dias.index])
-    axs[2].set_title('Total de Dias de Aplicação')
-    axs[2].set_ylabel('Total de Dias')
-    for i, v in enumerate(total_dias.values):
-        axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
-
-    for ax in axs:
-        ax.set_xlabel('Pilotos')
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-
-    fig.tight_layout()
-    return fig
-
 # Função para adicionar logomarca ao gráfico
 def adicionar_logomarca(fig, logo_path):
     st.write("Adicionando logomarca ao gráfico...")
@@ -189,7 +153,37 @@ def main():
                 st.write("Dados agregados dos pilotos:")
                 st.write(df_total)
 
-                fig = gerar_grafico(df_total, st.session_state['cores'])
+                fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
+
+                # Total de hectares
+                total_hectares = df_total.groupby('piloto')['hectares'].sum()
+                axs[0].bar(total_hectares.index, total_hectares.values, color=[st.session_state['cores'][piloto] for piloto in total_hectares.index])
+                axs[0].set_title('Total de Hectares Aplicado')
+                axs[0].set_ylabel('Total de Hectares')
+                for i, v in enumerate(total_hectares.values):
+                    axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                # Média de hectares por dia
+                media_hectares = df_total.groupby('piloto')['hectares'].mean()
+                axs[1].bar(media_hectares.index, media_hectares.values, color=[st.session_state['cores'][piloto] for piloto in media_hectares.index])
+                axs[1].set_title('Média de Hectares por Dia')
+                axs[1].set_ylabel('Média de Hectares')
+                for i, v in enumerate(media_hectares.values):
+                    axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                # Total de dias
+                total_dias = df_total.groupby('piloto')['data'].count()
+                axs[2].bar(total_dias.index, total_dias.values, color=[st.session_state['cores'][piloto] for piloto in total_dias.index])
+                axs[2].set_title('Total de Dias de Aplicação')
+                axs[2].set_ylabel('Total de Dias')
+                for i, v in enumerate(total_dias.values):
+                    axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                for ax in axs:
+                    ax.set_xlabel('Pilotos')
+                    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+
+                fig.tight_layout()
                 st.pyplot(fig)
 
                 # Adicionar logomarca ao gráfico
@@ -235,29 +229,25 @@ def main():
             else:
                 st.sidebar.error('Erro ao identificar o piloto.')
 
-        # Mostrar os dados do piloto atual
+        # Mostrar mensagem motivacional
         st.title(f'Dados do Piloto: {st.session_state["usuario_logado"]}')
         dados_piloto = st.session_state['pilotos'].get(st.session_state["usuario_logado"], [])
 
         if dados_piloto:
             df_piloto = pd.DataFrame(dados_piloto)
-            df_piloto['piloto'] = st.session_state["usuario_logado"]
             st.write(df_piloto)
 
-            fig = gerar_grafico(df_piloto, {st.session_state["usuario_logado"]: st.session_state['cores'][st.session_state["usuario_logado"]]})
-            st.pyplot(fig)
+            hectares_totais = df_piloto['hectares'].sum()
+            media_hectares_dia = df_piloto['hectares'].mean()
+            total_dias = df_piloto['data'].nunique()
 
-            # Adicionar logomarca ao gráfico
-            if os.path.exists(logo_path):
-                buf_final = adicionar_logomarca(fig, logo_path)
-                st.image(buf_final)
-
-            # Botão para baixar o gráfico
-            if os.path.exists(logo_path):
-                st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png")
+            if media_hectares_dia < 40:
+                st.warning("Você não bateu a meta diária de 40 hectares. Vamos melhorar!")
+            elif media_hectares_dia == 40:
+                st.info("Você bateu a meta diária de 40 hectares! Vamos continuar assim e melhorar ainda mais!")
             else:
-                buf = salvar_grafico(fig)
-                st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
+                st.success("Parabéns! Você superou a meta diária de 40 hectares! Continue com o ótimo trabalho!")
+
         else:
             st.write("Nenhum dado disponível para este piloto.")
 
