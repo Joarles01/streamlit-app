@@ -96,13 +96,13 @@ def main():
             painel = "Administrador"
         else:
             st.sidebar.error("Senha incorreta")
-            return
+            st.stop()  # Para evitar a execução do restante do código
     else:
         painel = "Piloto"
         piloto_atual = next((piloto for piloto, t in st.session_state['tokens'].items() if t == token), None)
         if piloto_atual is None:
             st.error("Token inválido")
-            return
+            st.stop()  # Para evitar a execução do restante do código
 
     if painel == "Administrador":
         st.sidebar.title('Painel do Administrador')
@@ -210,7 +210,4 @@ def main():
 
             fig = gerar_grafico(df, 'blue')
 
-            # Adicionar logomarca ao gráfico
-            if os.path.exists(logo_path):
-                buf_final = adicionar_logomarca(fig, logo_path)
-                st.image(buf_final)
+            # Adicionar logom
