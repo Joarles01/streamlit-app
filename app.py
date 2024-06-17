@@ -5,32 +5,39 @@ from io import BytesIO
 from PIL import Image, ImageDraw
 import os
 import hashlib
+import json
+
+# Função para carregar dados do arquivo JSON
+def carregar_dados(nome_arquivo):
+    if os.path.exists(nome_arquivo):
+        with open(nome_arquivo, 'r') as f:
+            return json.load(f)
+    else:
+        return {}
+
+# Função para salvar dados no arquivo JSON
+def salvar_dados(nome_arquivo, dados):
+    with open(nome_arquivo, 'w') as f:
+        json.dump(dados, f, indent=4)
 
 # Função para adicionar logomarca ao gráfico
 def adicionar_logomarca(fig, logo_path):
     st.write("Adicionando logomarca ao gráfico...")
-    # Salvar o gráfico em um objeto BytesIO
     buf = BytesIO()
     fig.savefig(buf, format='png')
     buf.seek(0)
 
-    # Abrir a imagem do gráfico com o Pillow
     imagem_grafico = Image.open(buf)
-
-    # Abrir a logomarca
     logomarca = Image.open(logo_path).convert("RGBA")
 
-    # Redimensionar a logomarca
     largura_logo, altura_logo = logomarca.size
-    largura_nova = 100  # ajuste a largura desejada
+    largura_nova = 100
     altura_nova = int((altura_logo / largura_logo) * largura_nova)
     logomarca = logomarca.resize((largura_nova, altura_nova), Image.LANCZOS)
 
-    # Posicionar a logomarca na imagem do gráfico
     posicao_logo = (imagem_grafico.width - largura_nova - 10, imagem_grafico.height - altura_nova - 10)
     imagem_grafico.paste(logomarca, posicao_logo, logomarca)
 
-    # Salvar a imagem combinada em um objeto BytesIO
     buf_final = BytesIO()
     imagem_grafico.save(buf_final, format='png')
     buf_final.seek(0)
@@ -59,33 +66,30 @@ def main():
     st.title('PILOTOS DS DRONES')
     st.write("Iniciando aplicação...")
 
+    # Arquivos de dados
+    arquivo_pilotos = 'pilotos.json'
+    arquivo_cores = 'cores.json'
+    arquivo_usuarios = 'usuarios.json'
+
+    # Carregar dados do JSON
+    pilotos = carregar_dados(arquivo_pilotos)
+    cores = carregar_dados(arquivo_cores)
+    usuarios = carregar_dados(arquivo_usuarios)
+
+    if not usuarios:
+        usuarios['admin'] = {
+            'senha': gerar_hash_senha('admin123'),
+            'tipo': 'Administrador'
+        }
+
     # Adicionar o logotipo da empresa na barra lateral
-    logo_path = "logo.png"  # Caminho relativo do logotipo
+    logo_path = "logo.png"
     if os.path.exists(logo_path):
         st.sidebar.image(logo_path, use_column_width=True)
         st.write("Logotipo carregado.")
     else:
         st.sidebar.write("Logotipo não encontrado. Verifique o caminho do arquivo.")
         st.write("Logotipo não encontrado.")
-
-    # Inicializar a lista de pilotos e cores no session_state
-    if 'pilotos' not in st.session_state:
-        st.session_state['pilotos'] = {}
-        st.write("Inicializando lista de pilotos.")
-    if 'cores' not in st.session_state:
-        st.session_state['cores'] = {}
-        st.write("Inicializando lista de cores.")
-    if 'tokens' not in st.session_state:
-        st.session_state['tokens'] = {}
-        st.write("Inicializando lista de tokens.")
-    if 'usuarios' not in st.session_state:
-        st.session_state['usuarios'] = {
-            'admin': {
-                'senha': gerar_hash_senha('admin123'),
-                'tipo': 'Administrador'
-            }
-        }
-        st.write("Inicializando lista de usuários com administrador padrão.")
 
     # Página de login
     st.sidebar.title("Login")
@@ -94,11 +98,11 @@ def main():
     login_button = st.sidebar.button("Login")
 
     if login_button:
-        if username in st.session_state['usuarios']:
-            stored_password_hash = st.session_state['usuarios'][username]['senha']
+        if username in usuarios:
+            stored_password_hash = usuarios[username]['senha']
             if verificar_senha(password, stored_password_hash):
                 st.session_state['usuario_logado'] = username
-                st.session_state['painel'] = st.session_state['usuarios'][username]['tipo']
+                st.session_state['painel'] = usuarios[username]['tipo']
                 st.sidebar.success(f"Bem-vindo, {username}!")
             else:
                 st.sidebar.error("Senha incorreta")
@@ -114,14 +118,16 @@ def main():
 
         if register_pilot_button:
             if new_pilot_username and new_pilot_password:
-                if new_pilot_username not in st.session_state['usuarios']:
-                    st.session_state['usuarios'][new_pilot_username] = {
+                if new_pilot_username not in usuarios:
+                    usuarios[new_pilot_username] = {
                         'senha': gerar_hash_senha(new_pilot_password),
                         'tipo': 'Piloto'
                     }
-                    st.session_state['pilotos'][new_pilot_username] = []
-                    # Adicionar cor padrão
-                    st.session_state['cores'][new_pilot_username] = '#00ff00'  # Verde
+                    pilotos[new_pilot_username] = []
+                    cores[new_pilot_username] = '#00ff00'  # Verde
+                    salvar_dados(arquivo_usuarios, usuarios)
+                    salvar_dados(arquivo_pilotos, pilotos)
+                    salvar_dados(arquivo_cores, cores)
                     st.sidebar.success(f"Piloto {new_pilot_username} cadastrado com sucesso!")
                 else:
                     st.sidebar.error("Piloto já existe")
@@ -134,16 +140,18 @@ def main():
 
         # Modificar cores dos pilotos
         st.sidebar.title("Modificar Cores dos Pilotos")
-        for piloto in st.session_state['pilotos']:
-            nova_cor = st.sidebar.color_picker(f"Cor do {piloto}", value=st.session_state['cores'].get(piloto, '#00ff00'))
-            st.session_state['cores'][piloto] = nova_cor
+        for piloto in pilotos:
+            nova_cor = st.sidebar.color_picker(f"Cor do {piloto}", value=cores.get(piloto, '#00ff00'))
+            cores[piloto] = nova_cor
+
+        salvar_dados(arquivo_cores, cores)
 
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
         
-        if st.session_state['pilotos']:
+        if pilotos:
             df_total = pd.DataFrame()
-            for piloto, dados in st.session_state['pilotos'].items():
+            for piloto, dados in pilotos.items():
                 if dados:
                     df_piloto = pd.DataFrame(dados)
                     df_piloto['piloto'] = piloto
@@ -157,7 +165,7 @@ def main():
 
                 # Total de hectares
                 total_hectares = df_total.groupby('piloto')['hectares'].sum()
-                axs[0].bar(total_hectares.index, total_hectares.values, color=[st.session_state['cores'][piloto] for piloto in total_hectares.index])
+                axs[0].bar(total_hectares.index, total_hectares.values, color=[cores[piloto] for piloto in total_hectares.index])
                 axs[0].set_title('Total de Hectares Aplicado')
                 axs[0].set_ylabel('Total de Hectares')
                 for i, v in enumerate(total_hectares.values):
@@ -165,7 +173,7 @@ def main():
 
                 # Média de hectares por dia
                 media_hectares = df_total.groupby('piloto')['hectares'].mean()
-                axs[1].bar(media_hectares.index, media_hectares.values, color=[st.session_state['cores'][piloto] for piloto in media_hectares.index])
+                axs[1].bar(media_hectares.index, media_hectares.values, color=[cores[piloto] for piloto in media_hectares.index])
                 axs[1].set_title('Média de Hectares por Dia')
                 axs[1].set_ylabel('Média de Hectares')
                 for i, v in enumerate(media_hectares.values):
@@ -173,7 +181,7 @@ def main():
 
                 # Total de dias
                 total_dias = df_total.groupby('piloto')['data'].count()
-                axs[2].bar(total_dias.index, total_dias.values, color=[st.session_state['cores'][piloto] for piloto in total_dias.index])
+                axs[2].bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto in total_dias.index])
                 axs[2].set_title('Total de Dias de Aplicação')
                 axs[2].set_ylabel('Total de Dias')
                 for i, v in enumerate(total_dias.values):
@@ -223,7 +231,8 @@ def main():
         if st.sidebar.button('Adicionar Hectares'):
             piloto_atual = st.session_state["usuario_logado"]
             if piloto_atual:
-                st.session_state['pilotos'][piloto_atual].append({'data': data, 'hectares': hectares})
+                pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares})
+                salvar_dados(arquivo_pilotos, pilotos)
                 st.sidebar.success(f'{hectares} hectares adicionados para {piloto_atual} em {data}')
                 st.write(f'{hectares} hectares adicionados para {piloto_atual} em {data}')
             else:
@@ -231,7 +240,7 @@ def main():
 
         # Mostrar mensagem motivacional
         st.title(f'Dados do Piloto: {st.session_state["usuario_logado"]}')
-        dados_piloto = st.session_state['pilotos'].get(st.session_state["usuario_logado"], [])
+        dados_piloto = pilotos.get(st.session_state["usuario_logado"], [])
 
         if dados_piloto:
             df_piloto = pd.DataFrame(dados_piloto)
