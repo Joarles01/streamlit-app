@@ -38,7 +38,7 @@ def adicionar_logomarca(fig, logo_path):
     largura_logo, altura_logo = logomarca.size
     largura_nova = 100  # ajuste a largura desejada
     altura_nova = int((altura_logo / largura_logo) * largura_nova)
-    logomarca = logomarca.resize((largura_nova, altura_nova), Image.ANTIALIAS)
+    logomarca = logomarca.resize((largura_nova, altura_nova), Image.LANCZOS)
 
     # Posicionar a logomarca na imagem do gráfico
     posicao_logo = (imagem_grafico.width - largura_nova - 10, imagem_grafico.height - altura_nova - 10)
