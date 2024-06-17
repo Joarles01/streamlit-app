@@ -7,24 +7,33 @@ import os
 import hashlib
 
 # Função para gerar o gráfico
-def gerar_grafico(df, colors):
+def gerar_grafico(df, cores_pilotos):
     st.write("Gerando gráfico...")
     fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
 
     # Total de hectares
-    df.groupby('piloto')['hectares'].sum().plot(kind='bar', ax=axs[0], color=colors)
+    total_hectares = df.groupby('piloto')['hectares'].sum()
+    axs[0].bar(total_hectares.index, total_hectares.values, color=[cores_pilotos[piloto] for piloto in total_hectares.index])
     axs[0].set_title('Total de Hectares Aplicado')
     axs[0].set_ylabel('Total de Hectares')
+    for i, v in enumerate(total_hectares.values):
+        axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
 
     # Média de hectares por dia
-    df.groupby('piloto')['hectares'].mean().plot(kind='bar', ax=axs[1], color=colors)
+    media_hectares = df.groupby('piloto')['hectares'].mean()
+    axs[1].bar(media_hectares.index, media_hectares.values, color=[cores_pilotos[piloto] for piloto in media_hectares.index])
     axs[1].set_title('Média de Hectares por Dia')
     axs[1].set_ylabel('Média de Hectares')
+    for i, v in enumerate(media_hectares.values):
+        axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
 
     # Total de dias
-    df.groupby('piloto')['data'].count().plot(kind='bar', ax=axs[2], color=colors)
+    total_dias = df.groupby('piloto')['data'].count()
+    axs[2].bar(total_dias.index, total_dias.values, color=[cores_pilotos[piloto] for piloto in total_dias.index])
     axs[2].set_title('Total de Dias de Aplicação')
     axs[2].set_ylabel('Total de Dias')
+    for i, v in enumerate(total_dias.values):
+        axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
 
     for ax in axs:
         ax.set_xlabel('Pilotos')
@@ -147,6 +156,8 @@ def main():
                         'tipo': 'Piloto'
                     }
                     st.session_state['pilotos'][new_pilot_username] = []
+                    # Adicionar cor padrão
+                    st.session_state['cores'][new_pilot_username] = '#00ff00'  # Verde
                     st.sidebar.success(f"Piloto {new_pilot_username} cadastrado com sucesso!")
                 else:
                     st.sidebar.error("Piloto já existe")
@@ -156,6 +167,12 @@ def main():
     # Painel do Administrador
     if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
         st.title("Painel do Administrador")
+
+        # Modificar cores dos pilotos
+        st.sidebar.title("Modificar Cores dos Pilotos")
+        for piloto in st.session_state['pilotos']:
+            nova_cor = st.sidebar.color_picker(f"Cor do {piloto}", value=st.session_state['cores'].get(piloto, '#00ff00'))
+            st.session_state['cores'][piloto] = nova_cor
 
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
@@ -171,7 +188,7 @@ def main():
                 st.write("Dados agregados dos pilotos:")
                 st.write(df_total)
 
-                fig = gerar_grafico(df_total, 'skyblue')
+                fig = gerar_grafico(df_total, st.session_state['cores'])
                 st.pyplot(fig)
 
                 # Adicionar logomarca ao gráfico
@@ -225,7 +242,7 @@ def main():
             df_piloto = pd.DataFrame(dados_piloto)
             st.write(df_piloto)
 
-            fig = gerar_grafico(df_piloto, 'skyblue')
+            fig = gerar_grafico(df_piloto, {st.session_state["usuario_logado"]: st.session_state['cores'][st.session_state["usuario_logado"]]})
             st.pyplot(fig)
 
             # Adicionar logomarca ao gráfico
