@@ -180,9 +180,10 @@ def main():
         if st.session_state['pilotos']:
             df_total = pd.DataFrame()
             for piloto, dados in st.session_state['pilotos'].items():
-                df_piloto = pd.DataFrame(dados)
-                df_piloto['piloto'] = piloto
-                df_total = pd.concat([df_total, df_piloto])
+                if dados:
+                    df_piloto = pd.DataFrame(dados)
+                    df_piloto['piloto'] = piloto
+                    df_total = pd.concat([df_total, df_piloto])
 
             if not df_total.empty:
                 st.write("Dados agregados dos pilotos:")
@@ -240,6 +241,7 @@ def main():
 
         if dados_piloto:
             df_piloto = pd.DataFrame(dados_piloto)
+            df_piloto['piloto'] = st.session_state["usuario_logado"]
             st.write(df_piloto)
 
             fig = gerar_grafico(df_piloto, {st.session_state["usuario_logado"]: st.session_state['cores'][st.session_state["usuario_logado"]]})
