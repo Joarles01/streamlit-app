@@ -205,7 +205,7 @@ def main():
 
                 # Total de dias
                 total_dias = df_total.groupby('piloto')['data'].count()
-                [2].bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto in total_dias.index])
+                axs[2].bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto in total_dias.index])
                 axs[2].set_title('Total de Dias de Aplicação')
                 axs[2].set_ylabel('Total de Dias')
                 for i, v in enumerate(total_dias.values):
