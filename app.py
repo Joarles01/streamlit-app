@@ -285,13 +285,24 @@ def main():
         if dados_piloto:
             df_piloto = pd.DataFrame(dados_piloto)
             selected_date = st.sidebar.selectbox('Selecione a data para editar', df_piloto['data'])
+            new_date = st.sidebar.date_input('Nova data', pd.to_datetime(selected_date))
             new_hectares = st.sidebar.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f")
             if st.sidebar.button('Salvar Alterações'):
                 for dado in pilotos[st.session_state["usuario_logado"]]:
                     if dado['data'] == selected_date:
+                        dado['data'] = str(new_date)
                         dado['hectares'] = new_hectares
                 salvar_dados(arquivo_pilotos, pilotos)
                 st.sidebar.success('Dados atualizados com sucesso!')
+
+        # Remover dados de hectares por data
+        st.sidebar.subheader('Remover Dados de Hectares')
+        if dados_piloto:
+            selected_date_remove = st.sidebar.selectbox('Selecione a data para remover', df_piloto['data'])
+            if st.sidebar.button('Remover Dados'):
+                pilotos[st.session_state["usuario_logado"]] = [dado for dado in pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
+                salvar_dados(arquivo_pilotos, pilotos)
+                st.sidebar.success('Dados removidos com sucesso!')
 
         # Alterar nome e senha do piloto
         st.sidebar.subheader('Alterar Nome e Senha')
