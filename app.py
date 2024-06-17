@@ -116,7 +116,8 @@ def main():
                     st.session_state['pilotos'][novo_piloto] = []
                     token = gerar_token(novo_piloto)
                     st.session_state['tokens'][novo_piloto] = token
-                    link = f"{st.experimental_get_query_params().get('base', [''])[0]}?token={token}"
+                    base_url = st.experimental_get_query_params().get('base', [''])[0]
+                    link = f"{base_url}?token={token}"
                     st.sidebar.success(f'Piloto {novo_piloto} cadastrado com sucesso!')
                     st.sidebar.write(f"Link para {novo_piloto}: {link}")
                 else:
@@ -126,14 +127,15 @@ def main():
 
         # Remover piloto
         st.sidebar.subheader('Remover Piloto')
-        piloto_remover = st.sidebar.selectbox('Selecione o Piloto para Remover', list(st.session_state['pilotos'].keys()))
-        if st.sidebar.button('Remover Piloto'):
-            if piloto_remover in st.session_state['pilotos']:
-                del st.session_state['pilotos'][piloto_remover]
-                del st.session_state['tokens'][piloto_remover]
-                st.sidebar.success(f'Piloto {piloto_remover} removido com sucesso!')
-            else:
-                st.sidebar.error('Piloto não encontrado')
+        if st.session_state['pilotos']:
+            piloto_remover = st.sidebar.selectbox('Selecione o Piloto para Remover', list(st.session_state['pilotos'].keys()))
+            if st.sidebar.button('Remover Piloto'):
+                if piloto_remover in st.session_state['pilotos']:
+                    del st.session_state['pilotos'][piloto_remover]
+                    del st.session_state['tokens'][piloto_remover]
+                    st.sidebar.success(f'Piloto {piloto_remover} removido com sucesso!')
+                else:
+                    st.sidebar.error('Piloto não encontrado')
 
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
@@ -211,4 +213,5 @@ def main():
             # Adicionar logomarca ao gráfico
             if os.path.exists(logo_path):
                 buf_final = adicionar_logomarca(fig, logo_path)
-                st.image
+                st.image(buf_final)
+            else:
