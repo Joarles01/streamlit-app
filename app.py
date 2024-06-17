@@ -1,5 +1,211 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+from io import BytesIO
+from PIL import Image, ImageDraw
+import os
+import hashlib
+import json
+
+# Função para carregar dados do arquivo JSON
+def carregar_dados(nome_arquivo):
+    if os.path.exists(nome_arquivo):
+        with open(nome_arquivo, 'r') as f:
+            return json.load(f)
+    else:
+        return {}
+
+# Função para salvar dados no arquivo JSON
+def salvar_dados(nome_arquivo, dados):
+    with open(nome_arquivo, 'w') as f:
+        json.dump(dados, f, indent=4)
+
+# Função para gerar um hash de senha
+def gerar_hash_senha(senha):
+    return hashlib.sha256(senha.encode()).hexdigest()
+
+# Função para verificar se o hash da senha fornecida corresponde ao hash armazenado
+def verificar_senha(senha, hash_senha):
+    return gerar_hash_senha(senha) == hash_senha
+
+# Função para adicionar logomarca ao gráfico
+def adicionar_logomarca(fig, logo_path):
+    st.write("Adicionando logomarca ao gráfico...")
+    buf = BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+
+    imagem_grafico = Image.open(buf)
+    logomarca = Image.open(logo_path).convert("RGBA")
+
+    largura_logo, altura_logo = logomarca.size
+    largura_nova = 100
+    altura_nova = int((altura_logo / largura_logo) * largura_nova)
+    logomarca = logomarca.resize((largura_nova, altura_nova), Image.LANCZOS)
+
+    posicao_logo = (imagem_grafico.width - largura_nova - 10, imagem_grafico.height - altura_nova - 10)
+    imagem_grafico.paste(logomarca, posicao_logo, logomarca)
+
+    buf_final = BytesIO()
+    imagem_grafico.save(buf_final, format='png')
+    buf_final.seek(0)
+
+    return buf_final
+
+# Função para salvar o gráfico
+def salvar_grafico(fig):
+    st.write("Salvando gráfico...")
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    return buf
+
+# Função principal do aplicativo
+def main():
+    st.set_page_config(page_title="PILOTOS DS DRONES", page_icon=":helicopter:", layout="wide")
+    st.title('PILOTOS DS DRONES')
+    st.write("Iniciando aplicação...")
+
+    # Arquivos de dados
+    arquivo_pilotos = 'pilotos.json'
+    arquivo_cores = 'cores.json'
+    arquivo_usuarios = 'usuarios.json'
+    arquivo_fotos = 'fotos.json'
+
+    # Carregar dados do JSON
+    pilotos = carregar_dados(arquivo_pilotos)
+    cores = carregar_dados(arquivo_cores)
+    usuarios = carregar_dados(arquivo_usuarios)
+    fotos = carregar_dados(arquivo_fotos)
+
+    if not usuarios:
+        usuarios['admin'] = {
+            'senha': gerar_hash_senha('admin123'),
+            'tipo': 'Administrador'
+        }
+
+    # Adicionar o logotipo da empresa na barra lateral
+    logo_path = "logo.png"
+    if os.path.exists(logo_path):
+        st.sidebar.image(logo_path, use_column_width=True)
+        st.write("Logotipo carregado.")
+    else:
+        st.sidebar.write("Logotipo não encontrado. Verifique o caminho do arquivo.")
+        st.write("Logotipo não encontrado.")
+
+    # Página de login
+    st.sidebar.title("Login")
+    username = st.sidebar.text_input("Usuário")
+    password = st.sidebar.text_input("Senha", type="password")
+    login_button = st.sidebar.button("Login")
+
+    if login_button:
+        if username in usuarios:
+            stored_password_hash = usuarios[username]['senha']
+            if verificar_senha(password, stored_password_hash):
+                st.session_state['usuario_logado'] = username
+                st.session_state['painel'] = usuarios[username]['tipo']
+                st.sidebar.success(f"Bem-vindo, {username}!")
+            else:
+                st.sidebar.error("Senha incorreta")
+        else:
+            st.sidebar.error("Usuário não encontrado")
+
+    # Cadastro de novos pilotos pelo administrador
+    if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
+        st.sidebar.title("Cadastrar Novo Piloto")
+        new_pilot_username = st.sidebar.text_input("Nome do Novo Piloto")
+        new_pilot_password = st.sidebar.text_input("Senha do Novo Piloto", type="password")
+        register_pilot_button = st.sidebar.button("Cadastrar Piloto")
+
+        if register_pilot_button:
+            if new_pilot_username and new_pilot_password:
+                if new_pilot_username not in usuarios:
+                    usuarios[new_pilot_username] = {
+                        'senha': gerar_hash_senha(new_pilot_password),
+                        'tipo': 'Piloto'
+                    }
+                    pilotos[new_pilot_username] = []
+                    cores[new_pilot_username] = '#00ff00'  # Verde
+                    fotos[new_pilot_username] = None
+                    salvar_dados(arquivo_usuarios, usuarios)
+                    salvar_dados(arquivo_pilotos, pilotos)
+                    salvar_dados(arquivo_cores, cores)
+                    salvar_dados(arquivo_fotos, fotos)
+                    st.sidebar.success(f"Piloto {new_pilot_username} cadastrado com sucesso!")
+                else:
+                    st.sidebar.error("Piloto já existe")
+            else:
+                st.sidebar.error("Por favor, insira um nome de usuário e uma senha")
+
+    # Remover piloto pelo administrador
+    if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
+        st.sidebar.title("Remover Piloto")
+        remove_pilot_username = st.sidebar.selectbox("Selecione o Piloto para Remover", list(pilotos.keys()))
+        remove_pilot_button = st.sidebar.button("Remover Piloto")
+
+        if remove_pilot_button:
+            if remove_pilot_username in usuarios:
+                del usuarios[remove_pilot_username]
+                del pilotos[remove_pilot_username]
+                del cores[remove_pilot_username]
+                del fotos[remove_pilot_username]
+                salvar_dados(arquivo_usuarios, usuarios)
+                salvar_dados(arquivo_pilotos, pilotos)
+                salvar_dados(arquivo_cores, cores)
+                salvar_dados(arquivo_fotos, fotos)
+                st.sidebar.success(f"Piloto {remove_pilot_username} removido com sucesso!")
+            else:
+                st.sidebar.error("Piloto não encontrado")
+
+    # Painel do Administrador
+    if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
+        st.title("Painel do Administrador")
+
+        # Modificar cores dos pilotos
+        st.sidebar.title("Modificar Cores dos Pilotos")
+        for piloto in pilotos:
+            nova_cor = st.sidebar.color_picker(f"Cor do {piloto}", value=cores.get(piloto, '#00ff00'))
+            cores[piloto] = nova_cor
+
+        salvar_dados(arquivo_cores, cores)
+
+        # Mostrar gráfico agregando dados de todos os pilotos
+        st.title('Dados de Todos os Pilotos')
+        
+        if pilotos:
+            df_total = pd.DataFrame()
+            for piloto, dados in pilotos.items():
+                if dados:
+                    df_piloto = pd.DataFrame(dados)
+                    df_piloto['piloto'] = piloto
+                    df_total = pd.concat([df_total, df_piloto])
+
+            if not df_total.empty:
+                st.write("Dados agregados dos pilotos:")
+                st.write(df_total)
+
+                fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
+
+                # Total de hectares
+                total_hectares = df_total.groupby('piloto')['hectares'].sum()
+                axs[0].bar(total_hectares.index, total_hectares.values, color=[cores[piloto] for piloto in total_hectares.index])
+                axs[0].set_title('Total de Hectares Aplicado')
+                axs[0].set_ylabel('Total de Hectares')
+                for i, v in enumerate(total_hectares.values):
+                    axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                # Média de hectares por dia
+                media_hectares = df_total.groupby('piloto')['hectares'].mean()
+                axs[1].bar(media_hectares.index, media_hectares.values, color=[cores[piloto] for piloto in media_hectares.index])
+                axs[1].set_title('Média de Hectares por Dia')
+                axs[1].set_ylabel('Média de Hectares')
+                for i, v in enumerate(media_hectares.values):
+                    axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                # Total de dias
                 total_dias = df_total.groupby('piloto')['data'].count()
-                axs[2].bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto in total_dias.index])
+                [2].bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto in total_dias.index])
                 axs[2].set_title('Total de Dias de Aplicação')
                 axs[2].set_ylabel('Total de Dias')
                 for i, v in enumerate(total_dias.values):
