@@ -392,40 +392,42 @@ def main():
             st.sidebar.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
 
         # Visualização diária por piloto
-        st.title("Visualização Diária por Piloto")
-        hoje = datetime.today().strftime('%Y-%m-%d')
-        st.write(f"Dados de aplicação diária para {hoje}")
+st.title("Visualização Diária por Piloto")
+hoje = datetime.today().strftime('%Y-%m-%d')
+st.write(f"Dados de aplicação diária para {hoje}")
 
-        if pilotos:
-            df_hoje = pd.DataFrame()
-            for piloto, dados in pilotos.items():
-                df_piloto = pd.DataFrame(dados)
-                df_piloto['data'] = pd.to_datetime(df_piloto['data'])
-                df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
-                if not df_hoje_piloto.empty:
-                    df_hoje_piloto['piloto'] = piloto
-                    df_hoje = pd.concat([df_hoje, df_hoje_piloto])
+if pilotos:
+    df_hoje = pd.DataFrame()
+    for piloto, dados in pilotos.items():
+        df_piloto = pd.DataFrame(dados)
+        if 'data' in df_piloto.columns:
+            df_piloto['data'] = pd.to_datetime(df_piloto['data'])
+            df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
+            if not df_hoje_piloto.empty:
+                df_hoje_piloto['piloto'] = piloto
+                df_hoje = pd.concat([df_hoje, df_hoje_piloto])
 
-            if not df_hoje.empty:
-                fig, ax = plt.subplots(figsize=(10, 6))
-                for piloto in df_hoje['piloto'].unique():
-                    df_piloto = df_hoje[df_hoje['piloto'] == piloto]
-                    ax.bar(df_piloto['data'].dt.strftime('%Y-%m-%d'), df_piloto['hectares'], label=piloto, color=cores.get(piloto, 'blue'))
+    if not df_hoje.empty:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        for piloto in df_hoje['piloto'].unique():
+            df_piloto = df_hoje[df_hoje['piloto'] == piloto]
+            ax.bar(df_piloto['data'].dt.strftime('%Y-%m-%d'), df_piloto['hectares'], label=piloto, color=cores.get(piloto, 'blue'))
 
-                ax.set_title('Total de Hectares Aplicado Hoje')
-                ax.set_ylabel('Total de Hectares')
-                ax.set_xlabel('Data')
-                ax.legend(title="Pilotos")
+        ax.set_title('Total de Hectares Aplicado Hoje')
+        ax.set_ylabel('Total de Hectares')
+        ax.set_xlabel('Data')
+        ax.legend(title="Pilotos")
 
-                for i, v in enumerate(df_hoje['hectares']):
-                    ax.text(i, v, round(v, 2), ha='center', va='bottom')
+        for i, v in enumerate(df_hoje['hectares']):
+            ax.text(i, v, round(v, 2), ha='center', va='bottom')
 
-                fig.autofmt_xdate()
-                st.pyplot(fig)
-            else:
-                st.write("Nenhum dado de aplicação para hoje.")
-        else:
-            st.write("Nenhum dado de piloto disponível.")
+        fig.autofmt_xdate()
+        st.pyplot(fig)
+    else:
+        st.write("Nenhum dado de aplicação para hoje.")
+else:
+    st.write("Nenhum dado de piloto disponível.")
+
 
     # Painel do Piloto
     if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Piloto":
