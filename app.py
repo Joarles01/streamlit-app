@@ -188,33 +188,28 @@ def main():
 
         # Adicionar dados da safra
         st.sidebar.title("Adicionar Dados da Safra")
-        inicio_safra = st.sidebar.date_input("Data de Início da Safra")
-        fim_safra = st.sidebar.date_input("Data de Fim da Safra")
-        hectares_safra = st.sidebar.number_input("Total de Hectares da Safra", min_value=0.0, format="%.2f")
+        safra['pilotos'] = safra.get('pilotos', {})
 
-        # Adicionar dados por piloto
-        safra['pilotos'] = {}
-        for piloto in pilotos:
-            hectares = st.sidebar.number_input(f"Hectares do piloto {piloto}", min_value=0.0, format="%.2f", key=f"hectares_{piloto}")
-            dias_trabalho = st.sidebar.number_input(f"Dias de trabalho do piloto {piloto}", min_value=0, format="%d", key=f"dias_{piloto}")
-            safra['pilotos'][piloto] = {'hectares': hectares, 'dias': dias_trabalho}
+        novo_piloto = st.sidebar.text_input("Nome do Piloto")
+        inicio_safra = st.sidebar.date_input("Data de Início da Safra", key="inicio_safra")
+        fim_safra = st.sidebar.date_input("Data de Fim da Safra", key="fim_safra")
+        hectares = st.sidebar.number_input("Total de Hectares", min_value=0.0, format="%.2f", key="hectares")
 
-        adicionar_safra_button = st.sidebar.button("Adicionar Dados da Safra")
-
-        if adicionar_safra_button:
-            safra['inicio'] = str(inicio_safra)
-            safra['fim'] = str(fim_safra)
-            safra['hectares'] = hectares_safra
-            dias_safra = (fim_safra - inicio_safra).days
-            media_hectares_safra = hectares_safra / dias_safra if dias_safra > 0 else 0
-            safra['dias'] = dias_safra
-            safra['media'] = media_hectares_safra
-            salvar_dados(arquivo_safra, safra)
-            st.sidebar.success("Dados da safra adicionados com sucesso!")
+        if st.sidebar.button("Adicionar Piloto e Dados da Safra"):
+            if novo_piloto and str(inicio_safra) and str(fim_safra):
+                safra['pilotos'][novo_piloto] = {
+                    'inicio': str(inicio_safra),
+                    'fim': str(fim_safra),
+                    'hectares': hectares
+                }
+                salvar_dados(arquivo_safra, safra)
+                st.sidebar.success(f"Dados da safra para {novo_piloto} adicionados com sucesso!")
+            else:
+                st.sidebar.error("Por favor, preencha todos os campos.")
 
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
-        
+
         if pilotos:
             df_total = pd.DataFrame()
             for piloto, dados in pilotos.items():
@@ -302,26 +297,25 @@ def main():
         # Mostrar dados da safra
         st.title("Dados da Safra")
         if safra:
-            st.write(f"Início: {safra['inicio']}")
-            st.write(f"Fim: {safra['fim']}")
-            st.write(f"Total de Hectares: {safra['hectares']}")
-            st.write(f"Média de Hectares por Dia: {safra['media']}")
-            st.write(f"Total de Dias: {safra['dias']}")
+            for piloto, dados in safra['pilotos'].items():
+                st.write(f"Piloto: {piloto}")
+                st.write(f"Início: {dados['inicio']}")
+                st.write(f"Fim: {dados['fim']}")
+                st.write(f"Total de Hectares: {dados['hectares']}")
 
-            # Gráfico da safra
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.bar(['Safra'], [safra['hectares']], color='blue', alpha=0.6)
-            ax.set_ylabel('Hectares')
-            ax.set_title('Dados da Safra')
-            ax.text(0, safra['hectares'], round(safra['hectares'], 2), ha='center', va='bottom')
-            st.pyplot(fig)
+                # Gráfico da safra
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.bar([piloto], [dados['hectares']], color='blue', alpha=0.6)
+                ax.set_ylabel('Hectares')
+                ax.set_title(f'Dados da Safra para {piloto}')
+                ax.text(0, dados['hectares'], round(dados['hectares'], 2), ha='center', va='bottom')
+                st.pyplot(fig)
 
-            # Adicionar dados dos pilotos no gráfico da safra
-            if 'pilotos' in safra:
+                # Adicionar dados dos pilotos no gráfico da safra
                 fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
 
                 # Total de hectares por piloto
-                total_hectares_piloto = pd.Series({piloto: dados['hectares'] for piloto, dados in safra['pilotos'].items()})
+                total_hectares_piloto = pd.Series({piloto: dados['hectares']})
                 axs[0].bar(total_hectares_piloto.index, total_hectares_piloto.values, color='blue', alpha=0.6)
                 axs[0].set_title('Total de Hectares por Piloto')
                 axs[0].set_ylabel('Total de Hectares')
@@ -329,7 +323,8 @@ def main():
                     axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
 
                 # Média de hectares por dia por piloto
-                media_hectares_piloto = pd.Series({piloto: dados['hectares'] / dados['dias'] if dados['dias'] > 0 else 0 for piloto, dados in safra['pilotos'].items()})
+                dias_safra = (pd.to_datetime(dados['fim']) - pd.to_datetime(dados['inicio'])).days
+                media_hectares_piloto = total_hectares_piloto / dias_safra
                 axs[1].bar(media_hectares_piloto.index, media_hectares_piloto.values, color='blue', alpha=0.6)
                 axs[1].set_title('Média de Hectares por Dia por Piloto')
                 axs[1].set_ylabel('Média de Hectares')
@@ -337,7 +332,7 @@ def main():
                     axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
 
                 # Total de dias por piloto
-                total_dias_piloto = pd.Series({piloto: dados['dias'] for piloto, dados in safra['pilotos'].items()})
+                total_dias_piloto = pd.Series({piloto: dias_safra})
                 axs[2].bar(total_dias_piloto.index, total_dias_piloto.values, color='blue', alpha=0.6)
                 axs[2].set_title('Total de Dias por Piloto')
                 axs[2].set_ylabel('Total de Dias')
