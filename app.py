@@ -187,28 +187,31 @@ def main():
         salvar_dados(arquivo_cores, cores)
 
         # Adicionar dados da safra
-        st.sidebar.title("Adicionar Dados da Safra")
-        inicio_safra = st.sidebar.date_input("Data de Início da Safra")
-        fim_safra = st.sidebar.date_input("Data de Fim da Safra")
-        hectares_safra = st.sidebar.number_input("Total de Hectares da Safra", min_value=0.0, format="%.2f")
-        adicionar_safra_button = st.sidebar.button("Adicionar Dados da Safra")
+st.sidebar.title("Adicionar Dados da Safra")
+inicio_safra = st.sidebar.date_input("Data de Início da Safra")
+fim_safra = st.sidebar.date_input("Data de Fim da Safra")
+hectares_safra = st.sidebar.number_input("Total de Hectares da Safra", min_value=0.0, format="%.2f")
 
-        if adicionar_safra_button:
-            safra['inicio'] = str(inicio_safra)
-            safra['fim'] = str(fim_safra)
-            safra['hectares'] = hectares_safra
-            dias_safra = (fim_safra - inicio_safra).days
-            media_hectares_safra = hectares_safra / dias_safra if dias_safra > 0 else 0
-            safra['dias'] = dias_safra
-            safra['media'] = media_hectares_safra
-            
-            safra['pilotos'] = {}
-            for piloto in pilotos:
-                hectares = st.sidebar.number_input(f"Hectares do piloto {piloto}", min_value=0.0, format="%.2f")
-                safra['pilotos'][piloto] = hectares
-            
-            salvar_dados(arquivo_safra, safra)
-            st.sidebar.success("Dados da safra adicionados com sucesso!")
+# Adicionar dados por piloto
+safra['pilotos'] = {}
+for piloto in pilotos:
+    hectares = st.sidebar.number_input(f"Hectares do piloto {piloto}", min_value=0.0, format="%.2f", key=f"hectares_{piloto}")
+    dias_trabalho = st.sidebar.number_input(f"Dias de trabalho do piloto {piloto}", min_value=0, format="%d", key=f"dias_{piloto}")
+    safra['pilotos'][piloto] = {'hectares': hectares, 'dias': dias_trabalho}
+
+adicionar_safra_button = st.sidebar.button("Adicionar Dados da Safra")
+
+if adicionar_safra_button:
+    safra['inicio'] = str(inicio_safra)
+    safra['fim'] = str(fim_safra)
+    safra['hectares'] = hectares_safra
+    dias_safra = (fim_safra - inicio_safra).days
+    media_hectares_safra = hectares_safra / dias_safra if dias_safra > 0 else 0
+    safra['dias'] = dias_safra
+    safra['media'] = media_hectares_safra
+    salvar_dados(arquivo_safra, safra)
+    st.sidebar.success("Dados da safra adicionados com sucesso!")
+
 
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
