@@ -190,22 +190,43 @@ def main():
         st.sidebar.title("Adicionar Dados da Safra")
         safra['pilotos'] = safra.get('pilotos', {})
 
-        novo_piloto = st.sidebar.text_input("Nome do Piloto")
-        inicio_safra = st.sidebar.date_input("Data de Início da Safra", key="inicio_safra")
-        fim_safra = st.sidebar.date_input("Data de Fim da Safra", key="fim_safra")
-        hectares = st.sidebar.number_input("Total de Hectares", min_value=0.0, format="%.2f", key="hectares")
+        if 'novo_piloto' not in st.session_state:
+            st.session_state.novo_piloto = ""
+
+        st.session_state.novo_piloto = st.sidebar.text_input("Nome do Piloto", value=st.session_state.novo_piloto)
+        inicio_safra = st.sidebar.date_input("Data de Início da Safra")
+        fim_safra = st.sidebar.date_input("Data de Fim da Safra")
+        hectares = st.sidebar.number_input("Total de Hectares", min_value=0.0, format="%.2f")
 
         if st.sidebar.button("Adicionar Piloto e Dados da Safra"):
-            if novo_piloto and str(inicio_safra) and str(fim_safra):
-                safra['pilotos'][novo_piloto] = {
+            if st.session_state.novo_piloto and str(inicio_safra) and str(fim_safra):
+                safra['pilotos'][st.session_state.novo_piloto] = {
                     'inicio': str(inicio_safra),
                     'fim': str(fim_safra),
                     'hectares': hectares
                 }
                 salvar_dados(arquivo_safra, safra)
-                st.sidebar.success(f"Dados da safra para {novo_piloto} adicionados com sucesso!")
+                st.sidebar.success(f"Dados da safra para {st.session_state.novo_piloto} adicionados com sucesso!")
+                st.session_state.novo_piloto = ""
             else:
                 st.sidebar.error("Por favor, preencha todos os campos.")
+
+        # Editar dados da safra
+        st.sidebar.title("Editar Dados da Safra")
+        pilotos_safra = list(safra['pilotos'].keys())
+        if pilotos_safra:
+            piloto_selecionado = st.sidebar.selectbox("Selecione o Piloto para Editar", pilotos_safra)
+            if piloto_selecionado:
+                novo_inicio_safra = st.sidebar.date_input("Nova Data de Início", pd.to_datetime(safra['pilotos'][piloto_selecionado]['inicio']))
+                novo_fim_safra = st.sidebar.date_input("Nova Data de Fim", pd.to_datetime(safra['pilotos'][piloto_selecionado]['fim']))
+                novo_hectares = st.sidebar.number_input("Novo Total de Hectares", min_value=0.0, format="%.2f", value=safra['pilotos'][piloto_selecionado]['hectares'])
+
+                if st.sidebar.button("Salvar Alterações"):
+                    safra['pilotos'][piloto_selecionado]['inicio'] = str(novo_inicio_safra)
+                    safra['pilotos'][piloto_selecionado]['fim'] = str(novo_fim_safra)
+                    safra['pilotos'][piloto_selecionado]['hectares'] = novo_hectares
+                    salvar_dados(arquivo_safra, safra)
+                    st.sidebar.success(f"Dados da safra para {piloto_selecionado} atualizados com sucesso!")
 
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
