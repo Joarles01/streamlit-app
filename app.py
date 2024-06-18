@@ -6,8 +6,8 @@ from PIL import Image, ImageDraw
 import os
 import hashlib
 import json
-from zipfile import ZipFile  # Certificar que a importação está correta
-from datetime import datetime  # Importação adicional para trabalhar com datas
+from zipfile import ZipFile
+from datetime import datetime
 
 # Função para carregar dados do arquivo JSON
 def carregar_dados(nome_arquivo):
@@ -249,6 +249,8 @@ def main():
             for piloto, dados in pilotos.items():
                 if dados:
                     df_piloto = pd.DataFrame(dados)
+                    if 'data' in df_piloto.columns:
+                        df_piloto['data'] = pd.to_datetime(df_piloto['data'])
                     df_piloto['piloto'] = piloto
                     df_total = pd.concat([df_total, df_piloto])
 
@@ -400,11 +402,12 @@ def main():
             df_hoje = pd.DataFrame()
             for piloto, dados in pilotos.items():
                 df_piloto = pd.DataFrame(dados)
-                df_piloto['data'] = pd.to_datetime(df_piloto['data'])
-                df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
-                if not df_hoje_piloto.empty:
-                    df_hoje_piloto['piloto'] = piloto
-                    df_hoje = pd.concat([df_hoje, df_hoje_piloto])
+                if 'data' in df_piloto.columns:
+                    df_piloto['data'] = pd.to_datetime(df_piloto['data'])
+                    df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
+                    if not df_hoje_piloto.empty:
+                        df_hoje_piloto['piloto'] = piloto
+                        df_hoje = pd.concat([df_hoje, df_hoje_piloto])
 
             if not df_hoje.empty:
                 fig, ax = plt.subplots(figsize=(10, 6))
