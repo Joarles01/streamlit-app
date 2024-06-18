@@ -228,6 +228,18 @@ def main():
                     salvar_dados(arquivo_safra, safra)
                     st.sidebar.success(f"Dados da safra para {piloto_selecionado} atualizados com sucesso!")
 
+        # Remover dados da safra
+        st.sidebar.title("Remover Dados da Safra")
+        if pilotos_safra:
+            piloto_remover = st.sidebar.selectbox("Selecione o Piloto para Remover os Dados", pilotos_safra)
+            if st.sidebar.button("Remover Dados da Safra"):
+                if piloto_remover in safra['pilotos']:
+                    del safra['pilotos'][piloto_remover]
+                    salvar_dados(arquivo_safra, safra)
+                    st.sidebar.success(f"Dados da safra do piloto {piloto_remover} removidos com sucesso!")
+                else:
+                    st.sidebar.error("Piloto não encontrado na safra")
+
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
 
@@ -322,13 +334,38 @@ def main():
             st.write(f"Fim da safra: {safra.get('fim', 'Não definido')}")
             st.write(f"Total de hectares da safra: {safra.get('hectares', 0)}")
 
-            fig, ax = plt.subplots(figsize=(10, 6))
-            for piloto, dados in safra['pilotos'].items():
-                ax.bar(piloto, dados['hectares'], color=cores.get(piloto, 'blue'), alpha=0.6)
-                ax.text(piloto, dados['hectares'], round(dados['hectares'], 2), ha='center', va='bottom')
+            fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
 
-            ax.set_ylabel('Hectares')
-            ax.set_title('Dados da Safra por Piloto')
+            # Total de hectares por piloto
+            total_hectares_safra = {piloto: dados['hectares'] for piloto, dados in safra['pilotos'].items()}
+            axs[0].bar(total_hectares_safra.keys(), total_hectares_safra.values(), color=[cores.get(piloto, 'blue') for piloto in total_hectares_safra.keys()])
+            axs[0].set_title('Total de Hectares por Piloto')
+            axs[0].set_ylabel('Total de Hectares')
+            for i, v in enumerate(total_hectares_safra.values()):
+                axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
+
+            # Média de hectares por dia por piloto
+            media_hectares_safra = {piloto: dados['hectares'] / (pd.to_datetime(dados['fim']) - pd.to_datetime(dados['inicio'])).days for piloto, dados in safra['pilotos'].items()}
+            axs[1].bar(media_hectares_safra.keys(), media_hectares_safra.values(), color=[cores.get(piloto, 'blue') for piloto in media_hectares_safra.keys()])
+            axs[1].set_title('Média de Hectares por Dia por Piloto')
+            axs[1].set_ylabel('Média de Hectares')
+            for i, v in enumerate(media_hectares_safra.values()):
+                axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
+
+            # Total de dias por piloto
+            total_dias_safra = {piloto: (pd.to_datetime(dados['fim']) - pd.to_datetime(dados['inicio'])).days for piloto, dados in safra['pilotos'].items()}
+            axs[2].bar(total_dias_safra.keys(), total_dias_safra.values(), color=[cores.get(piloto, 'blue') for piloto in total_dias_safra.keys()])
+            axs[2].set_title('Total de Dias por Piloto')
+            axs[2].set_ylabel('Total de Dias')
+            for i, v in enumerate(total_dias_safra.values()):
+                axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
+
+            for ax in axs:
+                ax.set_xlabel('Pilotos')
+                ax.set_xticks(range(len(total_hectares_safra.keys())))
+                ax.set_xticklabels(total_hectares_safra.keys(), rotation=45, ha='right')
+
+            fig.tight_layout()
             st.pyplot(fig)
 
         # Criar backup dos dados
