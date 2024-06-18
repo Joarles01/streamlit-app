@@ -187,31 +187,30 @@ def main():
         salvar_dados(arquivo_cores, cores)
 
         # Adicionar dados da safra
-st.sidebar.title("Adicionar Dados da Safra")
-inicio_safra = st.sidebar.date_input("Data de Início da Safra")
-fim_safra = st.sidebar.date_input("Data de Fim da Safra")
-hectares_safra = st.sidebar.number_input("Total de Hectares da Safra", min_value=0.0, format="%.2f")
+        st.sidebar.title("Adicionar Dados da Safra")
+        inicio_safra = st.sidebar.date_input("Data de Início da Safra")
+        fim_safra = st.sidebar.date_input("Data de Fim da Safra")
+        hectares_safra = st.sidebar.number_input("Total de Hectares da Safra", min_value=0.0, format="%.2f")
 
-# Adicionar dados por piloto
-safra['pilotos'] = {}
-for piloto in pilotos:
-    hectares = st.sidebar.number_input(f"Hectares do piloto {piloto}", min_value=0.0, format="%.2f", key=f"hectares_{piloto}")
-    dias_trabalho = st.sidebar.number_input(f"Dias de trabalho do piloto {piloto}", min_value=0, format="%d", key=f"dias_{piloto}")
-    safra['pilotos'][piloto] = {'hectares': hectares, 'dias': dias_trabalho}
+        # Adicionar dados por piloto
+        safra['pilotos'] = {}
+        for piloto in pilotos:
+            hectares = st.sidebar.number_input(f"Hectares do piloto {piloto}", min_value=0.0, format="%.2f", key=f"hectares_{piloto}")
+            dias_trabalho = st.sidebar.number_input(f"Dias de trabalho do piloto {piloto}", min_value=0, format="%d", key=f"dias_{piloto}")
+            safra['pilotos'][piloto] = {'hectares': hectares, 'dias': dias_trabalho}
 
-adicionar_safra_button = st.sidebar.button("Adicionar Dados da Safra")
+        adicionar_safra_button = st.sidebar.button("Adicionar Dados da Safra")
 
-if adicionar_safra_button:
-    safra['inicio'] = str(inicio_safra)
-    safra['fim'] = str(fim_safra)
-    safra['hectares'] = hectares_safra
-    dias_safra = (fim_safra - inicio_safra).days
-    media_hectares_safra = hectares_safra / dias_safra if dias_safra > 0 else 0
-    safra['dias'] = dias_safra
-    safra['media'] = media_hectares_safra
-    salvar_dados(arquivo_safra, safra)
-    st.sidebar.success("Dados da safra adicionados com sucesso!")
-
+        if adicionar_safra_button:
+            safra['inicio'] = str(inicio_safra)
+            safra['fim'] = str(fim_safra)
+            safra['hectares'] = hectares_safra
+            dias_safra = (fim_safra - inicio_safra).days
+            media_hectares_safra = hectares_safra / dias_safra if dias_safra > 0 else 0
+            safra['dias'] = dias_safra
+            safra['media'] = media_hectares_safra
+            salvar_dados(arquivo_safra, safra)
+            st.sidebar.success("Dados da safra adicionados com sucesso!")
 
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
@@ -321,7 +320,7 @@ if adicionar_safra_button:
                 fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
 
                 # Total de hectares por piloto
-                total_hectares_piloto = pd.Series(safra['pilotos'])
+                total_hectares_piloto = pd.Series({piloto: dados['hectares'] for piloto, dados in safra['pilotos'].items()})
                 axs[0].bar(total_hectares_piloto.index, total_hectares_piloto.values, color='blue', alpha=0.6)
                 axs[0].set_title('Total de Hectares por Piloto')
                 axs[0].set_ylabel('Total de Hectares')
@@ -329,15 +328,15 @@ if adicionar_safra_button:
                     axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
 
                 # Média de hectares por dia por piloto
-                media_hectares_piloto = total_hectares_piloto / safra['dias']
+                media_hectares_piloto = pd.Series({piloto: dados['hectares'] / dados['dias'] if dados['dias'] > 0 else 0 for piloto, dados in safra['pilotos'].items()})
                 axs[1].bar(media_hectares_piloto.index, media_hectares_piloto.values, color='blue', alpha=0.6)
                 axs[1].set_title('Média de Hectares por Dia por Piloto')
                 axs[1].set_ylabel('Média de Hectares')
                 for i, v in enumerate(media_hectares_piloto.values):
                     axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
 
-                # Total de dias por piloto (assumindo 1 dia de trabalho por entrada)
-                total_dias_piloto = pd.Series({piloto: safra['dias'] for piloto in safra['pilotos']})
+                # Total de dias por piloto
+                total_dias_piloto = pd.Series({piloto: dados['dias'] for piloto, dados in safra['pilotos'].items()})
                 axs[2].bar(total_dias_piloto.index, total_dias_piloto.values, color='blue', alpha=0.6)
                 axs[2].set_title('Total de Dias por Piloto')
                 axs[2].set_ylabel('Total de Dias')
