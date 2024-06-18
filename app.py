@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 import os
 import hashlib
 import json
-from zipfile import ZipFile
+from zipfile import ZipFile  # Certificar que a importação está correta
 
 # Função para carregar dados do arquivo JSON
 def carregar_dados(nome_arquivo):
@@ -255,6 +255,7 @@ def main():
 
                 for ax in axs:
                     ax.set_xlabel('Pilotos')
+                    ax.set_xticks(range(len(total_hectares.index)))
                     ax.set_xticklabels(total_hectares.index, rotation=45, ha='right')
 
                 fig.tight_layout()
@@ -345,6 +346,7 @@ def main():
 
                 for ax in axs:
                     ax.set_xlabel('Pilotos')
+                    ax.set_xticks(range(len(total_hectares_piloto.index)))
                     ax.set_xticklabels(total_hectares_piloto.index, rotation=45, ha='right')
 
                 fig.tight_layout()
