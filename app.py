@@ -391,7 +391,7 @@ def main():
             recuperar_backup("temp_backup.zip")
             st.sidebar.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
 
-        # Visualização diária por piloto
+            # Visualização diária por piloto
 st.title("Visualização Diária por Piloto")
 hoje = datetime.today().strftime('%Y-%m-%d')
 st.write(f"Dados de aplicação diária para {hoje}")
@@ -427,6 +427,7 @@ if pilotos:
         st.write("Nenhum dado de aplicação para hoje.")
 else:
     st.write("Nenhum dado de piloto disponível.")
+
 
 
     # Painel do Piloto
