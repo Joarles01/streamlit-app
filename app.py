@@ -318,55 +318,18 @@ def main():
         # Mostrar dados da safra
         st.title("Dados da Safra")
         if safra:
+            st.write(f"Início da safra: {safra.get('inicio', 'Não definido')}")
+            st.write(f"Fim da safra: {safra.get('fim', 'Não definido')}")
+            st.write(f"Total de hectares da safra: {safra.get('hectares', 0)}")
+
+            fig, ax = plt.subplots(figsize=(10, 6))
             for piloto, dados in safra['pilotos'].items():
-                st.write(f"Piloto: {piloto}")
-                st.write(f"Início: {dados['inicio']}")
-                st.write(f"Fim: {dados['fim']}")
-                st.write(f"Total de Hectares: {dados['hectares']}")
+                ax.bar(piloto, dados['hectares'], color=cores.get(piloto, 'blue'), alpha=0.6)
+                ax.text(piloto, dados['hectares'], round(dados['hectares'], 2), ha='center', va='bottom')
 
-                # Gráfico da safra
-                fig, ax = plt.subplots(figsize=(10, 6))
-                ax.bar([piloto], [dados['hectares']], color='blue', alpha=0.6)
-                ax.set_ylabel('Hectares')
-                ax.set_title(f'Dados da Safra para {piloto}')
-                ax.text(0, dados['hectares'], round(dados['hectares'], 2), ha='center', va='bottom')
-                st.pyplot(fig)
-
-                # Adicionar dados dos pilotos no gráfico da safra
-                fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
-
-                # Total de hectares por piloto
-                total_hectares_piloto = pd.Series({piloto: dados['hectares']})
-                axs[0].bar(total_hectares_piloto.index, total_hectares_piloto.values, color='blue', alpha=0.6)
-                axs[0].set_title('Total de Hectares por Piloto')
-                axs[0].set_ylabel('Total de Hectares')
-                for i, v in enumerate(total_hectares_piloto.values):
-                    axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
-
-                # Média de hectares por dia por piloto
-                dias_safra = (pd.to_datetime(dados['fim']) - pd.to_datetime(dados['inicio'])).days
-                media_hectares_piloto = total_hectares_piloto / dias_safra
-                axs[1].bar(media_hectares_piloto.index, media_hectares_piloto.values, color='blue', alpha=0.6)
-                axs[1].set_title('Média de Hectares por Dia por Piloto')
-                axs[1].set_ylabel('Média de Hectares')
-                for i, v in enumerate(media_hectares_piloto.values):
-                    axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
-
-                # Total de dias por piloto
-                total_dias_piloto = pd.Series({piloto: dias_safra})
-                axs[2].bar(total_dias_piloto.index, total_dias_piloto.values, color='blue', alpha=0.6)
-                axs[2].set_title('Total de Dias por Piloto')
-                axs[2].set_ylabel('Total de Dias')
-                for i, v in enumerate(total_dias_piloto.values):
-                    axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
-
-                for ax in axs:
-                    ax.set_xlabel('Pilotos')
-                    ax.set_xticks(range(len(total_hectares_piloto.index)))
-                    ax.set_xticklabels(total_hectares_piloto.index, rotation=45, ha='right')
-
-                fig.tight_layout()
-                st.pyplot(fig)
+            ax.set_ylabel('Hectares')
+            ax.set_title('Dados da Safra por Piloto')
+            st.pyplot(fig)
 
         # Criar backup dos dados
         st.sidebar.title("Backup de Dados")
