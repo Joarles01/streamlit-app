@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw
 import os
 import hashlib
 import json
+import datetime
 
 # Função para carregar dados do arquivo JSON
 def carregar_dados(nome_arquivo):
@@ -59,6 +60,14 @@ def salvar_grafico(fig):
     buf.seek(0)
     return buf
 
+# Função para criar backup dos dados
+def criar_backup():
+    with ZipFile('backup.zip', 'w') as zipf:
+        zipf.write('pilotos.json')
+        zipf.write('cores.json')
+        zipf.write('usuarios.json')
+        zipf.write('fotos.json')
+
 # Função principal do aplicativo
 def main():
     st.set_page_config(page_title="PILOTOS DS DRONES", page_icon=":drone:", layout="wide")
@@ -70,12 +79,14 @@ def main():
     arquivo_cores = 'cores.json'
     arquivo_usuarios = 'usuarios.json'
     arquivo_fotos = 'fotos.json'
+    arquivo_safra = 'safra.json'
 
     # Carregar dados do JSON
     pilotos = carregar_dados(arquivo_pilotos)
     cores = carregar_dados(arquivo_cores)
     usuarios = carregar_dados(arquivo_usuarios)
     fotos = carregar_dados(arquivo_fotos)
+    safra = carregar_dados(arquivo_safra)
 
     if not usuarios:
         usuarios['admin'] = {
@@ -169,6 +180,24 @@ def main():
 
         salvar_dados(arquivo_cores, cores)
 
+        # Adicionar dados da safra
+        st.sidebar.title("Adicionar Dados da Safra")
+        inicio_safra = st.sidebar.date_input("Data de Início da Safra")
+        fim_safra = st.sidebar.date_input("Data de Fim da Safra")
+        hectares_safra = st.sidebar.number_input("Total de Hectares da Safra", min_value=0.0, format="%.2f")
+        adicionar_safra_button = st.sidebar.button("Adicionar Dados da Safra")
+
+        if adicionar_safra_button:
+            safra['inicio'] = str(inicio_safra)
+            safra['fim'] = str(fim_safra)
+            safra['hectares'] = hectares_safra
+            dias_safra = (fim_safra - inicio_safra).days
+            media_hectares_safra = hectares_safra / dias_safra if dias_safra > 0 else 0
+            safra['dias'] = dias_safra
+            safra['media'] = media_hectares_safra
+            salvar_dados(arquivo_safra, safra)
+            st.sidebar.success("Dados da safra adicionados com sucesso!")
+
         # Mostrar gráfico agregando dados de todos os pilotos
         st.title('Dados de Todos os Pilotos')
         
@@ -212,7 +241,7 @@ def main():
 
                 for ax in axs:
                     ax.set_xlabel('Pilotos')
-                    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+                    ax.set_xticklabels(total_hectares.index, rotation=45, ha='right')
 
                 fig.tight_layout()
                 st.pyplot(fig)
@@ -240,8 +269,10 @@ def main():
                 # Mostrar estatísticas por piloto
                 st.title('Estatísticas por Piloto')
                 stats = df_total.groupby('piloto').agg(
+                    inicio=pd.NamedAgg(column='data', aggfunc='min'),
+                    fim=pd.NamedAgg(column='data', aggfunc='max'),
                     total_hectares=pd.NamedAgg(column='hectares', aggfunc='sum'),
-                    media_hectares_dia=pd.NamedAgg(column='hectares', aggfunc=lambda x: x.sum() / x.count()),
+                    media_hectares_dia=pd.NamedAgg(column='hectares', aggfunc='mean'),
                     total_dias=pd.NamedAgg(column='data', aggfunc='count')
                 ).reset_index()
                 st.write(stats)
@@ -252,6 +283,36 @@ def main():
 
         else:
             st.write("Nenhum dado de piloto disponível.")
+
+        # Mostrar dados da safra
+        st.title("Dados da Safra")
+        if safra:
+            st.write(f"Início: {safra['inicio']}")
+            st.write(f"Fim: {safra['fim']}")
+            st.write(f"Total de Hectares: {safra['hectares']}")
+            st.write(f"Média de Hectares por Dia: {safra['media']}")
+            st.write(f"Total de Dias: {safra['dias']}")
+
+            # Gráfico da safra
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.bar(['Safra'], [safra['hectares']], color='blue', alpha=0.6)
+            ax.set_ylabel('Hectares')
+            ax.set_title('Dados da Safra')
+            ax.text(0, safra['hectares'], round(safra['hectares'], 2), ha='center', va='bottom')
+            st.pyplot(fig)
+
+        # Criar backup dos dados
+        st.sidebar.title("Backup de Dados")
+        if st.sidebar.button("Criar Backup"):
+            criar_backup()
+            with open('backup.zip', 'rb') as file:
+                st.sidebar.download_button(
+                    label="Baixar Backup",
+                    data=file,
+                    file_name="backup.zip",
+                    mime="application/zip"
+                )
+                st.sidebar.success("Backup criado com sucesso!")
 
     # Painel do Piloto
     if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Piloto":
