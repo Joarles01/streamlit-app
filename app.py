@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 import os
 import hashlib
 import json
-import datetime
+from zipfile import ZipFile
 
 # Função para carregar dados do arquivo JSON
 def carregar_dados(nome_arquivo):
@@ -67,6 +67,12 @@ def criar_backup():
         zipf.write('cores.json')
         zipf.write('usuarios.json')
         zipf.write('fotos.json')
+        zipf.write('safra.json')
+
+# Função para recuperar backup dos dados
+def recuperar_backup(arquivo):
+    with ZipFile(arquivo, 'r') as zipf:
+        zipf.extractall()
 
 # Função principal do aplicativo
 def main():
@@ -301,6 +307,41 @@ def main():
             ax.text(0, safra['hectares'], round(safra['hectares'], 2), ha='center', va='bottom')
             st.pyplot(fig)
 
+            # Adicionar dados dos pilotos no gráfico da safra
+            if 'pilotos' in safra:
+                fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
+
+                # Total de hectares por piloto
+                total_hectares_piloto = pd.Series(safra['pilotos']).sum()
+                axs[0].bar(total_hectares_piloto.index, total_hectares_piloto.values, color='blue', alpha=0.6)
+                axs[0].set_title('Total de Hectares por Piloto')
+                axs[0].set_ylabel('Total de Hectares')
+                for i, v in enumerate(total_hectares_piloto.values):
+                    axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                # Média de hectares por dia por piloto
+                media_hectares_piloto = pd.Series(safra['pilotos']).mean()
+                axs[1].bar(media_hectares_piloto.index, media_hectares_piloto.values, color='blue', alpha=0.6)
+                axs[1].set_title('Média de Hectares por Dia por Piloto')
+                axs[1].set_ylabel('Média de Hectares')
+                for i, v in enumerate(media_hectares_piloto.values):
+                    axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                # Total de dias por piloto
+                total_dias_piloto = pd.Series(safra['pilotos']).count()
+                axs[2].bar(total_dias_piloto.index, total_dias_piloto.values, color='blue', alpha=0.6)
+                axs[2].set_title('Total de Dias por Piloto')
+                axs[2].set_ylabel('Total de Dias')
+                for i, v in enumerate(total_dias_piloto.values):
+                    axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                for ax in axs:
+                    ax.set_xlabel('Pilotos')
+                    ax.set_xticklabels(total_hectares_piloto.index, rotation=45, ha='right')
+
+                fig.tight_layout()
+                st.pyplot(fig)
+
         # Criar backup dos dados
         st.sidebar.title("Backup de Dados")
         if st.sidebar.button("Criar Backup"):
@@ -313,6 +354,15 @@ def main():
                     mime="application/zip"
                 )
                 st.sidebar.success("Backup criado com sucesso!")
+
+        # Recuperar backup dos dados
+        st.sidebar.title("Recuperar Backup de Dados")
+        backup_upload = st.sidebar.file_uploader("Escolha um arquivo de backup", type=["zip"])
+        if backup_upload is not None:
+            with open("temp_backup.zip", "wb") as f:
+                f.write(backup_upload.getbuffer())
+            recuperar_backup("temp_backup.zip")
+            st.sidebar.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
 
     # Painel do Piloto
     if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Piloto":
