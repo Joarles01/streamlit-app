@@ -498,6 +498,7 @@ def main():
             media_hectares_dia = df_piloto['hectares'].mean()
             total_dias = df_piloto['data'].nunique()
 
+            # Mostrar mensagem motivacional
             if media_hectares_dia < 40:
                 st.warning("Você não bateu a meta diária de 40 hectares. Vamos melhorar!")
             elif media_hectares_dia == 40:
@@ -506,6 +507,8 @@ def main():
                 st.success("Parabéns! Você superou a meta diária de 40 hectares! Continue com o ótimo trabalho!")
 
             st.subheader(f"Total de Hectares Aplicados: {hectares_totais}")
+            st.subheader(f"Média de Hectares por Dia: {media_hectares_dia}")
+            st.subheader(f"Total de Dias Trabalhados: {total_dias}")
         else:
             st.write("Nenhum dado disponível para este piloto.")
 
