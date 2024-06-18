@@ -413,17 +413,16 @@ def main():
                 fig, ax = plt.subplots(figsize=(10, 6))
                 for piloto in df_hoje['piloto'].unique():
                     df_piloto = df_hoje[df_hoje['piloto'] == piloto]
-                    ax.bar(df_piloto['data'].dt.strftime('%Y-%m-%d'), df_piloto['hectares'], label=piloto, color=cores.get(piloto, 'blue'))
+                    ax.bar(df_piloto['piloto'], df_piloto['hectares'], label=piloto, color=cores.get(piloto, 'blue'))
 
                 ax.set_title('Total de Hectares Aplicado Hoje')
                 ax.set_ylabel('Total de Hectares')
-                ax.set_xlabel('Data')
+                ax.set_xlabel('Piloto')
                 ax.legend(title="Pilotos")
 
                 for i, v in enumerate(df_hoje['hectares']):
                     ax.text(i, v, round(v, 2), ha='center', va='bottom')
 
-                fig.autofmt_xdate()
                 st.pyplot(fig)
             else:
                 st.write("Nenhum dado de aplicação para hoje.")
