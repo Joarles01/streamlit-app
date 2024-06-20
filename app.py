@@ -128,8 +128,9 @@ def main():
                     st.sidebar.error("Senha incorreta")
             else:
                 st.sidebar.error("Usuário não encontrado")
-
     else:
+        st.sidebar.success(f"Bem-vindo, {st.session_state['usuario_logado']}!")
+
         if st.sidebar.button("Sair da Conta"):
             del st.session_state['usuario_logado']
             del st.session_state['painel']
