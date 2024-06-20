@@ -69,6 +69,7 @@ def criar_backup():
         zipf.write('usuarios.json')
         zipf.write('fotos.json')
         zipf.write('safra.json')
+        zipf.write('fazendas.json')
 
 # Função para recuperar backup dos dados
 def recuperar_backup(arquivo):
@@ -87,6 +88,7 @@ def main():
     arquivo_usuarios = 'usuarios.json'
     arquivo_fotos = 'fotos.json'
     arquivo_safra = 'safra.json'
+    arquivo_fazendas = 'fazendas.json'
 
     # Carregar dados do JSON
     pilotos = carregar_dados(arquivo_pilotos)
@@ -94,6 +96,7 @@ def main():
     usuarios = carregar_dados(arquivo_usuarios)
     fotos = carregar_dados(arquivo_fotos)
     safra = carregar_dados(arquivo_safra)
+    fazendas = carregar_dados(arquivo_fazendas)
 
     if not usuarios:
         usuarios['admin'] = {
@@ -164,6 +167,27 @@ def main():
                 else:
                     st.sidebar.error("Por favor, insira um nome de usuário e uma senha")
 
+        # Cadastro de fazendas pelo administrador
+        if st.session_state['painel'] == "Administrador":
+            st.sidebar.title("Cadastrar Nova Fazenda")
+            new_farm_name = st.sidebar.text_input("Nome da Nova Fazenda")
+            new_farm_hectares = st.sidebar.number_input("Total de Hectares da Fazenda", min_value=0.0, format="%.2f")
+            register_farm_button = st.sidebar.button("Cadastrar Fazenda")
+
+            if register_farm_button:
+                if new_farm_name and new_farm_hectares:
+                    if new_farm_name not in fazendas:
+                        fazendas[new_farm_name] = {
+                            'total_hectares': new_farm_hectares,
+                            'dados_aplicacao': []
+                        }
+                        salvar_dados(arquivo_fazendas, fazendas)
+                        st.sidebar.success(f"Fazenda {new_farm_name} cadastrada com sucesso!")
+                    else:
+                        st.sidebar.error("Fazenda já existe")
+                else:
+                    st.sidebar.error("Por favor, insira um nome e o total de hectares da fazenda")
+
         # Remover piloto pelo administrador
         if st.session_state['painel'] == "Administrador":
             st.sidebar.title("Remover Piloto")
@@ -183,6 +207,20 @@ def main():
                     st.sidebar.success(f"Piloto {remove_pilot_username} removido com sucesso!")
                 else:
                     st.sidebar.error("Piloto não encontrado")
+
+        # Remover fazenda pelo administrador
+        if st.session_state['painel'] == "Administrador":
+            st.sidebar.title("Remover Fazenda")
+            remove_farm_name = st.sidebar.selectbox("Selecione a Fazenda para Remover", list(fazendas.keys()))
+            remove_farm_button = st.sidebar.button("Remover Fazenda")
+
+            if remove_farm_button:
+                if remove_farm_name in fazendas:
+                    del fazendas[remove_farm_name]
+                    salvar_dados(arquivo_fazendas, fazendas)
+                    st.sidebar.success(f"Fazenda {remove_farm_name} removida com sucesso!")
+                else:
+                    st.sidebar.error("Fazenda não encontrada")
 
         # Painel do Administrador
         if st.session_state['painel'] == "Administrador":
@@ -380,6 +418,38 @@ def main():
                 fig.tight_layout()
                 st.pyplot(fig)
 
+            # Mostrar dados das fazendas
+            st.title("Dados das Fazendas")
+            if fazendas:
+                df_fazendas = pd.DataFrame()
+                for fazenda, dados in fazendas.items():
+                    for aplicacao in dados['dados_aplicacao']:
+                        aplicacao['fazenda'] = fazenda
+                        df_fazendas = pd.concat([df_fazendas, pd.DataFrame([aplicacao])])
+
+                if not df_fazendas.empty:
+                    st.write("Dados agregados das fazendas:")
+                    st.write(df_fazendas)
+
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    df_fazendas['data'] = pd.to_datetime(df_fazendas['data'])
+                    for fazenda in df_fazendas['fazenda'].unique():
+                        df_fazenda = df_fazendas[df_fazendas['fazenda'] == fazenda]
+                        ax.bar(df_fazenda['data'].dt.strftime('%Y-%m-%d'), df_fazenda['hectares'], label=fazenda)
+
+                    ax.set_title('Total de Hectares por Fazenda')
+                    ax.set_ylabel('Total de Hectares')
+                    ax.set_xlabel('Data')
+                    ax.legend(title="Fazendas")
+
+                    for i, v in enumerate(df_fazendas['hectares']):
+                        ax.text(i, v, round(v, 2), ha='center', va='bottom')
+
+                    fig.autofmt_xdate()
+                    st.pyplot(fig)
+                else:
+                    st.write("Nenhum dado de fazenda disponível.")
+
             # Criar backup dos dados
             st.sidebar.title("Backup de Dados")
             if st.sidebar.button("Criar Backup"):
@@ -448,21 +518,24 @@ def main():
             st.sidebar.subheader('Entrada de Hectares')
             data = st.sidebar.date_input('Data')
             hectares = st.sidebar.number_input('Hectares', min_value=0.0, format="%.2f")
-            
+            fazenda = st.sidebar.selectbox('Fazenda', list(fazendas.keys()))
+
             if st.sidebar.button('Adicionar Hectares'):
                 piloto_atual = st.session_state["usuario_logado"]
-                if piloto_atual:
+                if piloto_atual and fazenda:
                     dados_piloto = pilotos[piloto_atual]
                     datas_existentes = [dado['data'] for dado in dados_piloto]
                     if str(data) not in datas_existentes:
-                        pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares})
+                        pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda})
+                        fazendas[fazenda]['dados_aplicacao'].append({'data': str(data), 'hectares': hectares, 'piloto': piloto_atual})
                         salvar_dados(arquivo_pilotos, pilotos)
-                        st.sidebar.success(f'{hectares} hectares adicionados para {piloto_atual} em {data}')
-                        st.write(f'{hectares} hectares adicionados para {piloto_atual} em {data}')
+                        salvar_dados(arquivo_fazendas, fazendas)
+                        st.sidebar.success(f'{hectares} hectares adicionados para {piloto_atual} em {data} na fazenda {fazenda}')
+                        st.write(f'{hectares} hectares adicionados para {piloto_atual} em {data} na fazenda {fazenda}')
                     else:
                         st.sidebar.error('Já existe uma entrada para essa data. Por favor, edite a entrada existente.')
                 else:
-                    st.sidebar.error('Erro ao identificar o piloto.')
+                    st.sidebar.error('Erro ao identificar o piloto ou a fazenda.')
 
             # Editar dados de hectares
             st.sidebar.subheader('Editar Dados de Hectares')
@@ -472,12 +545,15 @@ def main():
                 selected_date = st.sidebar.selectbox('Selecione a data para editar', df_piloto['data'])
                 new_date = st.sidebar.date_input('Nova data', pd.to_datetime(selected_date))
                 new_hectares = st.sidebar.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f")
+                new_fazenda = st.sidebar.selectbox('Nova Fazenda', list(fazendas.keys()), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]))
                 if st.sidebar.button('Salvar Alterações'):
                     for dado in pilotos[st.session_state["usuario_logado"]]:
                         if dado['data'] == selected_date:
                             dado['data'] = str(new_date)
                             dado['hectares'] = new_hectares
+                            dado['fazenda'] = new_fazenda
                     salvar_dados(arquivo_pilotos, pilotos)
+                    salvar_dados(arquivo_fazendas, fazendas)
                     st.sidebar.success('Dados atualizados com sucesso!')
 
             # Remover dados de hectares por data
@@ -486,7 +562,9 @@ def main():
                 selected_date_remove = st.sidebar.selectbox('Selecione a data para remover', df_piloto['data'])
                 if st.sidebar.button('Remover Dados'):
                     pilotos[st.session_state["usuario_logado"]] = [dado for dado in pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
+                    fazendas = {fazenda: {'total_hectares': dados['total_hectares'], 'dados_aplicacao': [dado for dado in dados['dados_aplicacao'] if dado['data'] != selected_date_remove]} for fazenda, dados in fazendas.items()}
                     salvar_dados(arquivo_pilotos, pilotos)
+                    salvar_dados(arquivo_fazendas, fazendas)
                     st.sidebar.success('Dados removidos com sucesso!')
 
             # Alterar nome e senha do piloto
