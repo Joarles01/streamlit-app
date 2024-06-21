@@ -133,9 +133,9 @@ def main():
         # Cadastro de novos pilotos pelo administrador
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Cadastrar Novo Piloto"):
-                new_pilot_username = st.text_input("Nome do Novo Piloto")
-                new_pilot_password = st.text_input("Senha do Novo Piloto", type="password")
-                register_pilot_button = st.button("Cadastrar Piloto")
+                new_pilot_username = st.text_input("Nome do Novo Piloto", key="new_pilot_username")
+                new_pilot_password = st.text_input("Senha do Novo Piloto", type="password", key="new_pilot_password")
+                register_pilot_button = st.button("Cadastrar Piloto", key="register_pilot_button")
 
                 if register_pilot_button:
                     if new_pilot_username and new_pilot_password:
@@ -160,8 +160,8 @@ def main():
         # Cadastro de fazendas e pastos pelo administrador
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Cadastrar Nova Fazenda"):
-                new_farm_name = st.text_input("Nome da Nova Fazenda")
-                if st.button("Cadastrar Fazenda"):
+                new_farm_name = st.text_input("Nome da Nova Fazenda", key="new_farm_name")
+                if st.button("Cadastrar Fazenda", key="register_farm_button"):
                     if new_farm_name:
                         if new_farm_name not in fazendas:
                             fazendas[new_farm_name] = {'pastos': {}}
@@ -175,10 +175,10 @@ def main():
         # Adicionar pastos a fazendas
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Adicionar Pasto a uma Fazenda"):
-                selected_farm = st.selectbox("Selecione a Fazenda", list(fazendas.keys()))
-                new_pasture_name = st.text_input("Nome do Pasto")
-                new_pasture_hectares = st.number_input("Tamanho do Pasto (hectares)", min_value=0.0, format="%.2f")
-                if st.button("Adicionar Pasto"):
+                selected_farm = st.selectbox("Selecione a Fazenda", list(fazendas.keys()), key="selected_farm")
+                new_pasture_name = st.text_input("Nome do Pasto", key="new_pasture_name")
+                new_pasture_hectares = st.number_input("Tamanho do Pasto (hectares)", min_value=0.0, format="%.2f", key="new_pasture_hectares")
+                if st.button("Adicionar Pasto", key="add_pasture_button"):
                     if new_pasture_name and new_pasture_hectares:
                         if selected_farm in fazendas:
                             fazendas[selected_farm]['pastos'][new_pasture_name] = {'tamanho': new_pasture_hectares, 'dados_aplicacao': []}
@@ -192,21 +192,21 @@ def main():
         # Editar fazendas e pastos
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Editar Fazenda e Pastos"):
-                edit_farm = st.selectbox("Selecione a Fazenda", list(fazendas.keys()))
+                edit_farm = st.selectbox("Selecione a Fazenda", list(fazendas.keys()), key="edit_farm")
                 if edit_farm:
                     st.write(f"Editando fazenda: {edit_farm}")
-                    new_farm_name = st.text_input("Novo Nome da Fazenda", edit_farm)
-                    if st.button("Renomear Fazenda"):
+                    new_farm_name = st.text_input("Novo Nome da Fazenda", edit_farm, key="new_farm_name_edit")
+                    if st.button("Renomear Fazenda", key="rename_farm_button"):
                         if new_farm_name:
                             fazendas[new_farm_name] = fazendas.pop(edit_farm)
                             salvar_dados(arquivo_fazendas, fazendas)
                             st.success(f"Fazenda renomeada para {new_farm_name}")
 
-                    selected_pasture = st.selectbox("Selecione o Pasto", list(fazendas[new_farm_name]['pastos'].keys()))
+                    selected_pasture = st.selectbox("Selecione o Pasto", list(fazendas[new_farm_name]['pastos'].keys()), key="selected_pasture")
                     if selected_pasture:
-                        new_pasture_name = st.text_input("Novo Nome do Pasto", selected_pasture)
-                        new_pasture_hectares = st.number_input("Novo Tamanho do Pasto (hectares)", min_value=0.0, value=fazendas[new_farm_name]['pastos'][selected_pasture]['tamanho'], format="%.2f")
-                        if st.button("Salvar Alterações do Pasto"):
+                        new_pasture_name = st.text_input("Novo Nome do Pasto", selected_pasture, key="new_pasture_name_edit")
+                        new_pasture_hectares = st.number_input("Novo Tamanho do Pasto (hectares)", min_value=0.0, value=fazendas[new_farm_name]['pastos'][selected_pasture]['tamanho'], format="%.2f", key="new_pasture_hectares_edit")
+                        if st.button("Salvar Alterações do Pasto", key="save_pasture_changes_button"):
                             if new_pasture_name:
                                 fazendas[new_farm_name]['pastos'][new_pasture_name] = fazendas[new_farm_name]['pastos'].pop(selected_pasture)
                                 fazendas[new_farm_name]['pastos'][new_pasture_name]['tamanho'] = new_pasture_hectares
@@ -216,8 +216,8 @@ def main():
         # Remover piloto pelo administrador
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Remover Piloto"):
-                remove_pilot_username = st.selectbox("Selecione o Piloto para Remover", list(pilotos.keys()))
-                remove_pilot_button = st.button("Remover Piloto")
+                remove_pilot_username = st.selectbox("Selecione o Piloto para Remover", list(pilotos.keys()), key="remove_pilot_username")
+                remove_pilot_button = st.button("Remover Piloto", key="remove_pilot_button")
 
                 if remove_pilot_button:
                     if remove_pilot_username in usuarios:
@@ -236,8 +236,8 @@ def main():
         # Remover fazenda pelo administrador
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Remover Fazenda"):
-                remove_farm_name = st.selectbox("Selecione a Fazenda para Remover", list(fazendas.keys()))
-                remove_farm_button = st.button("Remover Fazenda")
+                remove_farm_name = st.selectbox("Selecione a Fazenda para Remover", list(fazendas.keys()), key="remove_farm_name")
+                remove_farm_button = st.button("Remover Fazenda", key="remove_farm_button")
 
                 if remove_farm_button:
                     if remove_farm_name in fazendas:
@@ -254,7 +254,7 @@ def main():
             # Modificar cores dos pilotos
             with st.sidebar.expander("Modificar Cores dos Pilotos"):
                 for piloto in pilotos:
-                    nova_cor = st.color_picker(f"Cor do {piloto}", value=cores.get(piloto, '#00ff00'))
+                    nova_cor = st.color_picker(f"Cor do {piloto}", value=cores.get(piloto, '#00ff00'), key=f"color_picker_{piloto}")
                     cores[piloto] = nova_cor
                 salvar_dados(arquivo_cores, cores)
 
@@ -262,11 +262,11 @@ def main():
             st.subheader("Dados da Safra")
             with st.expander("Adicionar Dados da Safra"):
                 safra['pilotos'] = safra.get('pilotos', {})
-                st.session_state.novo_piloto = st.text_input("Nome do Piloto", value=st.session_state.get('novo_piloto', ""))
-                inicio_safra = st.date_input("Data de Início da Safra")
-                fim_safra = st.date_input("Data de Fim da Safra")
-                hectares = st.number_input("Total de Hectares", min_value=0.0, format="%.2f")
-                if st.button("Adicionar Piloto e Dados da Safra"):
+                st.session_state.novo_piloto = st.text_input("Nome do Piloto", value=st.session_state.get('novo_piloto', ""), key="novo_piloto_safra")
+                inicio_safra = st.date_input("Data de Início da Safra", key="inicio_safra")
+                fim_safra = st.date_input("Data de Fim da Safra", key="fim_safra")
+                hectares = st.number_input("Total de Hectares", min_value=0.0, format="%.2f", key="hectares_safra")
+                if st.button("Adicionar Piloto e Dados da Safra", key="add_safra_button"):
                     if st.session_state.novo_piloto and str(inicio_safra) and str(fim_safra):
                         safra['pilotos'][st.session_state.novo_piloto] = {
                             'inicio': str(inicio_safra),
@@ -282,12 +282,12 @@ def main():
             with st.expander("Editar Dados da Safra"):
                 pilotos_safra = list(safra['pilotos'].keys())
                 if pilotos_safra:
-                    piloto_selecionado = st.selectbox("Selecione o Piloto para Editar", pilotos_safra)
+                    piloto_selecionado = st.selectbox("Selecione o Piloto para Editar", pilotos_safra, key="edit_piloto_safra")
                     if piloto_selecionado:
-                        novo_inicio_safra = st.date_input("Nova Data de Início", pd.to_datetime(safra['pilotos'][piloto_selecionado]['inicio']))
-                        novo_fim_safra = st.date_input("Nova Data de Fim", pd.to_datetime(safra['pilotos'][piloto_selecionado]['fim']))
-                        novo_hectares = st.number_input("Novo Total de Hectares", min_value=0.0, format="%.2f", value=safra['pilotos'][piloto_selecionado]['hectares'])
-                        if st.button("Salvar Alterações"):
+                        novo_inicio_safra = st.date_input("Nova Data de Início", pd.to_datetime(safra['pilotos'][piloto_selecionado]['inicio']), key="novo_inicio_safra")
+                        novo_fim_safra = st.date_input("Nova Data de Fim", pd.to_datetime(safra['pilotos'][piloto_selecionado]['fim']), key="novo_fim_safra")
+                        novo_hectares = st.number_input("Novo Total de Hectares", min_value=0.0, format="%.2f", value=safra['pilotos'][piloto_selecionado]['hectares'], key="novo_hectares_safra")
+                        if st.button("Salvar Alterações", key="save_safra_changes_button"):
                             safra['pilotos'][piloto_selecionado]['inicio'] = str(novo_inicio_safra)
                             safra['pilotos'][piloto_selecionado]['fim'] = str(novo_fim_safra)
                             safra['pilotos'][piloto_selecionado]['hectares'] = novo_hectares
@@ -296,8 +296,8 @@ def main():
 
             with st.expander("Remover Dados da Safra"):
                 if pilotos_safra:
-                    piloto_remover = st.selectbox("Selecione o Piloto para Remover os Dados", pilotos_safra)
-                    if st.button("Remover Dados da Safra"):
+                    piloto_remover = st.selectbox("Selecione o Piloto para Remover os Dados", pilotos_safra, key="remove_piloto_safra")
+                    if st.button("Remover Dados da Safra", key="remove_safra_button"):
                         if piloto_remover in safra['pilotos']:
                             del safra['pilotos'][piloto_remover]
                             salvar_dados(arquivo_safra, safra)
@@ -356,7 +356,7 @@ def main():
                     st.pyplot(fig)
 
                     # Adicionar logomarca ao gráfico (com a opção de escolher uma logo diferente)
-                    logo_upload = st.file_uploader("Carregar nova logomarca para o gráfico", type=["png", "jpg", "jpeg"])
+                    logo_upload = st.file_uploader("Carregar nova logomarca para o gráfico", type=["png", "jpg", "jpeg"], key="logo_upload")
                     logo_image = None
                     if logo_upload is not None:
                         logo_image = Image.open(logo_upload)
@@ -370,10 +370,10 @@ def main():
 
                     # Botão para baixar o gráfico
                     if logo_image is not None:
-                        st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png")
+                        st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png", key="download_graphic_button")
                     else:
                         buf = salvar_grafico(fig)
-                        st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png")
+                        st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png", key="download_graphic_button_no_logo")
 
                     # Mostrar estatísticas por piloto
                     st.subheader('Estatísticas por Piloto')
@@ -423,20 +423,21 @@ def main():
 
         # Criar backup dos dados
         with st.sidebar.expander("Backup de Dados"):
-            if st.button("Criar Backup"):
+            if st.button("Criar Backup", key="create_backup_button"):
                 criar_backup()
                 with open('backup.zip', 'rb') as file:
                     st.download_button(
                         label="Baixar Backup",
                         data=file,
                         file_name="backup.zip",
-                        mime="application/zip"
+                        mime="application/zip",
+                        key="download_backup_button"
                     )
                     st.success("Backup criado com sucesso!")
 
         # Recuperar backup dos dados
         with st.sidebar.expander("Recuperar Backup de Dados"):
-            backup_upload = st.file_uploader("Escolha um arquivo de backup", type=["zip"])
+            backup_upload = st.file_uploader("Escolha um arquivo de backup", type=["zip"], key="backup_upload")
             if backup_upload is not None:
                 with open("temp_backup.zip", "wb") as f:
                     f.write(backup_upload.getbuffer())
@@ -488,12 +489,12 @@ def main():
 
         # Entrada de Hectares
         with st.sidebar.expander("Entrada de Hectares"):
-            data = st.date_input('Data')
-            hectares = st.number_input('Hectares', min_value=0.0, format="%.2f")
-            fazenda = st.selectbox('Fazenda', list(fazendas.keys()))
-            pasto = st.selectbox('Pasto', list(fazendas[fazenda]['pastos'].keys()) if fazenda in fazendas else [])
+            data = st.date_input('Data', key="data_hectares")
+            hectares = st.number_input('Hectares', min_value=0.0, format="%.2f", key="hectares_input")
+            fazenda = st.selectbox('Fazenda', list(fazendas.keys()), key="fazenda_input")
+            pasto = st.selectbox('Pasto', list(fazendas[fazenda]['pastos'].keys()) if fazenda in fazendas else [], key="pasto_input")
 
-            if st.button('Adicionar Hectares'):
+            if st.button('Adicionar Hectares', key="add_hectares_button"):
                 piloto_atual = st.session_state["usuario_logado"]
                 if piloto_atual and fazenda and pasto:
                     dados_piloto = pilotos[piloto_atual]
@@ -518,12 +519,12 @@ def main():
                 if 'fazenda' not in df_piloto.columns:
                     st.error('Nenhum dado de fazenda disponível.')
                 else:
-                    selected_date = st.selectbox('Selecione a data para editar', df_piloto['data'])
-                    new_date = st.date_input('Nova data', pd.to_datetime(selected_date))
-                    new_hectares = st.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f")
-                    new_fazenda = st.selectbox('Nova Fazenda', list(fazendas.keys()), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]))
-                    new_pasto = st.selectbox('Novo Pasto', list(fazendas[new_fazenda]['pastos'].keys()), index=list(fazendas[new_fazenda]['pastos'].keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]))
-                    if st.button('Salvar Alterações'):
+                    selected_date = st.selectbox('Selecione a data para editar', df_piloto['data'], key="edit_selected_date")
+                    new_date = st.date_input('Nova data', pd.to_datetime(selected_date), key="edit_new_date")
+                    new_hectares = st.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f", key="edit_new_hectares")
+                    new_fazenda = st.selectbox('Nova Fazenda', list(fazendas.keys()), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]), key="edit_new_fazenda")
+                    new_pasto = st.selectbox('Novo Pasto', list(fazendas[new_fazenda]['pastos'].keys()), index=list(fazendas[new_fazenda]['pastos'].keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]), key="edit_new_pasto")
+                    if st.button('Salvar Alterações', key="save_hectares_changes_button"):
                         for dado in pilotos[st.session_state["usuario_logado"]]:
                             if dado['data'] == selected_date:
                                 dado['data'] = str(new_date)
@@ -538,8 +539,8 @@ def main():
         with st.sidebar.expander("Remover Dados de Hectares"):
             if dados_piloto:
                 df_piloto = pd.DataFrame(dados_piloto)
-                selected_date_remove = st.selectbox('Selecione a data para remover', df_piloto['data'])
-                if st.button('Remover Dados'):
+                selected_date_remove = st.selectbox('Selecione a data para remover', df_piloto['data'], key="remove_selected_date")
+                if st.button('Remover Dados', key="remove_hectares_button"):
                     pilotos[st.session_state["usuario_logado"]] = [dado for dado in pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
                     fazendas = {fazenda: {'total_hectares': dados['total_hectares'], 'pastos': {pasto: {'tamanho': pasto_data['tamanho'], 'dados_aplicacao': [dado for dado in pasto_data.get('dados_aplicacao', []) if dado['data'] != selected_date_remove]} for pasto, pasto_data in dados.get('pastos', {}).items()}} for fazenda, dados in fazendas.items()}
                     salvar_dados(arquivo_pilotos, pilotos)
@@ -548,9 +549,9 @@ def main():
 
         # Alterar nome e senha do piloto
         with st.sidebar.expander("Alterar Nome e Senha"):
-            novo_nome = st.text_input('Novo Nome de Usuário')
-            nova_senha = st.text_input('Nova Senha', type='password')
-            alterar_dados_button = st.button('Alterar Dados')
+            novo_nome = st.text_input('Novo Nome de Usuário', key="new_username")
+            nova_senha = st.text_input('Nova Senha', type='password', key="new_password")
+            alterar_dados_button = st.button('Alterar Dados', key="change_credentials_button")
 
             if alterar_dados_button:
                 if novo_nome and nova_senha:
@@ -577,7 +578,7 @@ def main():
 
         # Upload de foto de perfil
         with st.sidebar.expander("Foto de Perfil"):
-            uploaded_file = st.file_uploader("Escolha uma imagem", type=["png", "jpg", "jpeg"])
+            uploaded_file = st.file_uploader("Escolha uma imagem", type=["png", "jpg", "jpeg"], key="profile_picture_upload")
             if uploaded_file is not None:
                 bytes_data = uploaded_file.read()
                 foto_path = f'foto_{st.session_state["usuario_logado"]}.png'
