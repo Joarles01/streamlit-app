@@ -450,6 +450,18 @@ def main():
                 else:
                     st.write("Nenhum dado de fazenda disponível.")
 
+                # Mostrar todas as fazendas cadastradas com o total de hectares
+                st.subheader("Lista de Fazendas Cadastradas")
+                lista_fazendas = pd.DataFrame.from_dict(fazendas, orient='index')
+                st.write(lista_fazendas[['total_hectares']])
+
+                # Mostrar a quantidade de hectares aplicados em cada fazenda por piloto
+                st.subheader("Aplicações por Fazenda e Piloto")
+                if not df_fazendas.empty:
+                    st.write(df_fazendas[['fazenda', 'piloto', 'data', 'hectares']])
+                else:
+                    st.write("Nenhuma aplicação registrada.")
+
             # Criar backup dos dados
             st.sidebar.title("Backup de Dados")
             if st.sidebar.button("Criar Backup"):
@@ -542,23 +554,27 @@ def main():
             dados_piloto = pilotos.get(st.session_state["usuario_logado"], [])
             if dados_piloto:
                 df_piloto = pd.DataFrame(dados_piloto)
-                selected_date = st.sidebar.selectbox('Selecione a data para editar', df_piloto['data'])
-                new_date = st.sidebar.date_input('Nova data', pd.to_datetime(selected_date))
-                new_hectares = st.sidebar.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f")
-                new_fazenda = st.sidebar.selectbox('Nova Fazenda', list(fazendas.keys()), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]))
-                if st.sidebar.button('Salvar Alterações'):
-                    for dado in pilotos[st.session_state["usuario_logado"]]:
-                        if dado['data'] == selected_date:
-                            dado['data'] = str(new_date)
-                            dado['hectares'] = new_hectares
-                            dado['fazenda'] = new_fazenda
-                    salvar_dados(arquivo_pilotos, pilotos)
-                    salvar_dados(arquivo_fazendas, fazendas)
-                    st.sidebar.success('Dados atualizados com sucesso!')
+                if 'fazenda' not in df_piloto.columns:
+                    st.sidebar.error('Nenhum dado de fazenda disponível.')
+                else:
+                    selected_date = st.sidebar.selectbox('Selecione a data para editar', df_piloto['data'])
+                    new_date = st.sidebar.date_input('Nova data', pd.to_datetime(selected_date))
+                    new_hectares = st.sidebar.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f")
+                    new_fazenda = st.sidebar.selectbox('Nova Fazenda', list(fazendas.keys()), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]))
+                    if st.sidebar.button('Salvar Alterações'):
+                        for dado in pilotos[st.session_state["usuario_logado"]]:
+                            if dado['data'] == selected_date:
+                                dado['data'] = str(new_date)
+                                dado['hectares'] = new_hectares
+                                dado['fazenda'] = new_fazenda
+                        salvar_dados(arquivo_pilotos, pilotos)
+                        salvar_dados(arquivo_fazendas, fazendas)
+                        st.sidebar.success('Dados atualizados com sucesso!')
 
             # Remover dados de hectares por data
             st.sidebar.subheader('Remover Dados de Hectares')
             if dados_piloto:
+                df_piloto = pd.DataFrame(dados_piloto)
                 selected_date_remove = st.sidebar.selectbox('Selecione a data para remover', df_piloto['data'])
                 if st.sidebar.button('Remover Dados'):
                     pilotos[st.session_state["usuario_logado"]] = [dado for dado in pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
