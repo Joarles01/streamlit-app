@@ -378,20 +378,9 @@ def main():
                     lista_fazendas = pd.DataFrame.from_dict(fazendas, orient='index')
                     st.write(lista_fazendas[['total_hectares']])
 
-                    # Gráfico das fazendas
-                    fig, ax = plt.subplots(figsize=(10, 6))
-                    for fazenda, dados in fazendas.items():
-                        df_fazenda = pd.DataFrame(dados['dados_aplicacao'])
-                        if not df_fazenda.empty:
-                            df_fazenda['data'] = pd.to_datetime(df_fazenda['data'])
-                            ax.bar(df_fazenda['data'].dt.strftime('%Y-%m-%d'), df_fazenda['hectares'], label=fazenda)
-
-                    ax.set_title('Total de Hectares por Fazenda')
-                    ax.set_ylabel('Total de Hectares')
-                    ax.set_xlabel('Data')
-                    ax.legend(title="Fazendas")
-                    fig.autofmt_xdate()
-                    st.pyplot(fig)
+                    # Mostrar dados das aplicações por fazenda
+                    st.subheader("Quantidade Aplicada em Cada Fazenda")
+                    st.write(df_fazendas)
 
     # Criar backup dos dados
     with st.sidebar.expander("Backup de Dados"):
