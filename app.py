@@ -271,9 +271,8 @@ def main():
                         else:
                             st.error("Piloto não encontrado na safra")
 
-            # Mostrar gráfico agregando dados de todos os pilotos
+            # Mostrar gráficos e listas
             st.subheader('Dados de Todos os Pilotos')
-
             if pilotos:
                 df_total = pd.DataFrame()
                 for piloto, dados in pilotos.items():
@@ -288,38 +287,35 @@ def main():
                     st.write("Dados agregados dos pilotos:")
                     st.write(df_total)
 
-                    fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
+                    col1, col2 = st.columns(2)
 
-                    # Total de hectares
-                    total_hectares = df_total.groupby('piloto')['hectares'].sum()
-                    axs[0].bar(total_hectares.index, total_hectares.values, color=[cores[piloto] for piloto in total_hectares.index])
-                    axs[0].set_title('Total de Hectares Aplicado')
-                    axs[0].set_ylabel('Total de Hectares')
-                    for i, v in enumerate(total_hectares.values):
-                        axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
+                    with col1:
+                        st.subheader('Total de Hectares Aplicado')
+                        fig, ax = plt.subplots(figsize=(5, 4))
+                        total_hectares = df_total.groupby('piloto')['hectares'].sum()
+                        ax.bar(total_hectares.index, total_hectares.values, color=[cores[piloto] for piloto in total_hectares.index])
+                        ax.set_ylabel('Total de Hectares')
+                        for i, v in enumerate(total_hectares.values):
+                            ax.text(i, v, round(v, 2), ha='center', va='bottom')
+                        st.pyplot(fig)
 
-                    # Média de hectares por dia
-                    media_hectares = df_total.groupby('piloto')['hectares'].mean()
-                    axs[1].bar(media_hectares.index, media_hectares.values, color=[cores[piloto] for piloto in media_hectares.index])
-                    axs[1].set_title('Média de Hectares por Dia')
-                    axs[1].set_ylabel('Média de Hectares')
-                    for i, v in enumerate(media_hectares.values):
-                        axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
+                    with col2:
+                        st.subheader('Média de Hectares por Dia')
+                        fig, ax = plt.subplots(figsize=(5, 4))
+                        media_hectares = df_total.groupby('piloto')['hectares'].mean()
+                        ax.bar(media_hectares.index, media_hectares.values, color=[cores[piloto] for piloto in media_hectares.index])
+                        ax.set_ylabel('Média de Hectares')
+                        for i, v in enumerate(media_hectares.values):
+                            ax.text(i, v, round(v, 2), ha='center', va='bottom')
+                        st.pyplot(fig)
 
-                    # Total de dias
+                    st.subheader('Total de Dias de Aplicação')
+                    fig, ax = plt.subplots(figsize=(10, 4))
                     total_dias = df_total.groupby('piloto')['data'].count()
-                    axs[2].bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto in total_dias.index])
-                    axs[2].set_title('Total de Dias de Aplicação')
-                    axs[2].set_ylabel('Total de Dias')
+                    ax.bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto in total_dias.index])
+                    ax.set_ylabel('Total de Dias')
                     for i, v in enumerate(total_dias.values):
-                        axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
-
-                    for ax in axs:
-                        ax.set_xlabel('Pilotos')
-                        ax.set_xticks(range(len(total_hectares.index)))
-                        ax.set_xticklabels(total_hectares.index, rotation=45, ha='right')
-
-                    fig.tight_layout()
+                        ax.text(i, v, round(v, 2), ha='center', va='bottom')
                     st.pyplot(fig)
 
                     # Adicionar logomarca ao gráfico (com a opção de escolher uma logo diferente)
@@ -367,38 +363,35 @@ def main():
                 st.write(f"Fim da safra: {safra.get('fim', 'Não definido')}")
                 st.write(f"Total de hectares da safra: {safra.get('hectares', 0)}")
 
-                fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
+                col1, col2 = st.columns(2)
 
-                # Total de hectares por piloto
-                total_hectares_safra = {piloto: dados['hectares'] for piloto, dados in safra['pilotos'].items()}
-                axs[0].bar(total_hectares_safra.keys(), total_hectares_safra.values(), color=[cores.get(piloto, 'blue') for piloto in total_hectares_safra.keys()])
-                axs[0].set_title('Total de Hectares por Piloto')
-                axs[0].set_ylabel('Total de Hectares')
-                for i, v in enumerate(total_hectares_safra.values()):
-                    axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
+                with col1:
+                    st.subheader('Total de Hectares por Piloto')
+                    fig, ax = plt.subplots(figsize=(5, 4))
+                    total_hectares_safra = {piloto: dados['hectares'] for piloto, dados in safra['pilotos'].items()}
+                    ax.bar(total_hectares_safra.keys(), total_hectares_safra.values(), color=[cores.get(piloto, 'blue') for piloto in total_hectares_safra.keys()])
+                    ax.set_ylabel('Total de Hectares')
+                    for i, v in enumerate(total_hectares_safra.values()):
+                        ax.text(i, v, round(v, 2), ha='center', va='bottom')
+                    st.pyplot(fig)
 
-                # Média de hectares por dia por piloto
-                media_hectares_safra = {piloto: dados['hectares'] / (pd.to_datetime(dados['fim']) - pd.to_datetime(dados['inicio'])).days for piloto, dados in safra['pilotos'].items()}
-                axs[1].bar(media_hectares_safra.keys(), media_hectares_safra.values(), color=[cores.get(piloto, 'blue') for piloto in media_hectares_safra.keys()])
-                axs[1].set_title('Média de Hectares por Dia por Piloto')
-                axs[1].set_ylabel('Média de Hectares')
-                for i, v in enumerate(media_hectares_safra.values()):
-                    axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
+                with col2:
+                    st.subheader('Média de Hectares por Dia por Piloto')
+                    fig, ax = plt.subplots(figsize=(5, 4))
+                    media_hectares_safra = {piloto: dados['hectares'] / (pd.to_datetime(dados['fim']) - pd.to_datetime(dados['inicio'])).days for piloto, dados in safra['pilotos'].items()}
+                    ax.bar(media_hectares_safra.keys(), media_hectares_safra.values(), color=[cores.get(piloto, 'blue') for piloto in media_hectares_safra.keys()])
+                    ax.set_ylabel('Média de Hectares')
+                    for i, v in enumerate(media_hectares_safra.values()):
+                        ax.text(i, v, round(v, 2), ha='center', va='bottom')
+                    st.pyplot(fig)
 
-                # Total de dias por piloto
+                st.subheader('Total de Dias por Piloto')
+                fig, ax = plt.subplots(figsize=(10, 4))
                 total_dias_safra = {piloto: (pd.to_datetime(dados['fim']) - pd.to_datetime(dados['inicio'])).days for piloto, dados in safra['pilotos'].items()}
-                axs[2].bar(total_dias_safra.keys(), total_dias_safra.values(), color=[cores.get(piloto, 'blue') for piloto in total_dias_safra.keys()])
-                axs[2].set_title('Total de Dias por Piloto')
-                axs[2].set_ylabel('Total de Dias')
+                ax.bar(total_dias_safra.keys(), total_dias_safra.values(), color=[cores.get(piloto, 'blue') for piloto in total_dias_safra.keys()])
+                ax.set_ylabel('Total de Dias')
                 for i, v in enumerate(total_dias_safra.values()):
-                    axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
-
-                for ax in axs:
-                    ax.set_xlabel('Pilotos')
-                    ax.set_xticks(range(len(total_hectares_safra.keys())))
-                    ax.set_xticklabels(total_hectares_safra.keys(), rotation=45, ha='right')
-
-                fig.tight_layout()
+                    ax.text(i, v, round(v, 2), ha='center', va='bottom')
                 st.pyplot(fig)
 
             # Mostrar dados das fazendas
@@ -414,36 +407,33 @@ def main():
                     st.write("Dados agregados das fazendas:")
                     st.write(df_fazendas)
 
-                    fig, ax = plt.subplots(figsize=(10, 6))
-                    df_fazendas['data'] = pd.to_datetime(df_fazendas['data'])
-                    for fazenda in df_fazendas['fazenda'].unique():
-                        df_fazenda = df_fazendas[df_fazendas['fazenda'] == fazenda]
-                        ax.bar(df_fazenda['data'].dt.strftime('%Y-%m-%d'), df_fazenda['hectares'], label=fazenda)
+                    col1, col2 = st.columns(2)
 
-                    ax.set_title('Total de Hectares por Fazenda')
-                    ax.set_ylabel('Total de Hectares')
-                    ax.set_xlabel('Data')
-                    ax.legend(title="Fazendas")
+                    with col1:
+                        st.subheader("Total de Hectares por Fazenda")
+                        fig, ax = plt.subplots(figsize=(5, 4))
+                        df_fazendas['data'] = pd.to_datetime(df_fazendas['data'])
+                        for fazenda in df_fazendas['fazenda'].unique():
+                            df_fazenda = df_fazendas[df_fazendas['fazenda'] == fazenda]
+                            ax.bar(df_fazenda['data'].dt.strftime('%Y-%m-%d'), df_fazenda['hectares'], label=fazenda)
 
-                    for i, v in enumerate(df_fazendas['hectares']):
-                        ax.text(i, v, round(v, 2), ha='center', va='bottom')
+                        ax.set_ylabel('Total de Hectares')
+                        for i, v in enumerate(df_fazendas['hectares']):
+                            ax.text(i, v, round(v, 2), ha='center', va='bottom')
+                        fig.autofmt_xdate()
+                        st.pyplot(fig)
 
-                    fig.autofmt_xdate()
-                    st.pyplot(fig)
-                else:
-                    st.write("Nenhum dado de fazenda disponível.")
+                    with col2:
+                        st.subheader("Aplicações por Fazenda e Piloto")
+                        if not df_fazendas.empty:
+                            st.write(df_fazendas[['fazenda', 'piloto', 'data', 'hectares']])
+                        else:
+                            st.write("Nenhuma aplicação registrada.")
 
                 # Mostrar todas as fazendas cadastradas com o total de hectares
                 st.subheader("Lista de Fazendas Cadastradas")
                 lista_fazendas = pd.DataFrame.from_dict(fazendas, orient='index')
                 st.write(lista_fazendas[['total_hectares']])
-
-                # Mostrar a quantidade de hectares aplicados em cada fazenda por piloto
-                st.subheader("Aplicações por Fazenda e Piloto")
-                if not df_fazendas.empty:
-                    st.write(df_fazendas[['fazenda', 'piloto', 'data', 'hectares']])
-                else:
-                    st.write("Nenhuma aplicação registrada.")
 
             # Criar backup dos dados
             with st.sidebar.expander("Backup de Dados"):
