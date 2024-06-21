@@ -157,53 +157,36 @@ def main():
                     else:
                         st.error("Por favor, insira um nome de usuário e uma senha")
 
-        # Cadastro de fazendas pelo administrador
+        # Cadastro de fazendas e pastos pelo administrador
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Cadastrar Nova Fazenda"):
                 new_farm_name = st.text_input("Nome da Nova Fazenda")
-                new_farm_hectares = st.number_input("Total de Hectares da Fazenda", min_value=0.0, format="%.2f")
-                register_farm_button = st.button("Cadastrar Fazenda")
-
-                if register_farm_button:
-                    if new_farm_name and new_farm_hectares:
+                pastures = []
+                new_pasture_name = st.text_input("Nome do Pasto")
+                new_pasture_hectares = st.number_input("Tamanho do Pasto (hectares)", min_value=0.0, format="%.2f")
+                if st.button("Adicionar Pasto"):
+                    if new_pasture_name and new_pasture_hectares:
+                        pastures.append({
+                            'nome': new_pasture_name,
+                            'tamanho': new_pasture_hectares
+                        })
+                        st.success(f"Pasto {new_pasture_name} adicionado com sucesso!")
+                    else:
+                        st.error("Por favor, preencha todos os campos do pasto")
+                
+                if st.button("Cadastrar Fazenda"):
+                    if new_farm_name and pastures:
                         if new_farm_name not in fazendas:
                             fazendas[new_farm_name] = {
-                                'total_hectares': new_farm_hectares,
-                                'pastos': {}
+                                'total_hectares': sum([pasto['tamanho'] for pasto in pastures]),
+                                'pastos': {pasto['nome']: {'tamanho': pasto['tamanho'], 'dados_aplicacao': []} for pasto in pastures}
                             }
                             salvar_dados(arquivo_fazendas, fazendas)
                             st.success(f"Fazenda {new_farm_name} cadastrada com sucesso!")
                         else:
                             st.error("Fazenda já existe")
                     else:
-                        st.error("Por favor, insira um nome e o total de hectares da fazenda")
-
-        # Cadastro de pastos dentro das fazendas
-        if st.session_state['painel'] == "Administrador":
-            with st.sidebar.expander("Cadastrar Pasto em Fazenda"):
-                farm_name = st.selectbox("Selecione a Fazenda", list(fazendas.keys()))
-                pasture_name = st.text_input("Nome do Pasto")
-                pasture_hectares = st.number_input("Tamanho do Pasto (hectares)", min_value=0.0, format="%.2f")
-                register_pasture_button = st.button("Cadastrar Pasto")
-
-                if register_pasture_button:
-                    if farm_name and pasture_name and pasture_hectares:
-                        if farm_name in fazendas:
-                            if 'pastos' not in fazendas[farm_name]:
-                                fazendas[farm_name]['pastos'] = {}
-                            if pasture_name not in fazendas[farm_name]['pastos']:
-                                fazendas[farm_name]['pastos'][pasture_name] = {
-                                    'tamanho': pasture_hectares,
-                                    'dados_aplicacao': []
-                                }
-                                salvar_dados(arquivo_fazendas, fazendas)
-                                st.success(f"Pasto {pasture_name} cadastrado na fazenda {farm_name} com sucesso!")
-                            else:
-                                st.error("Pasto já existe nessa fazenda")
-                        else:
-                            st.error("Fazenda não encontrada")
-                    else:
-                        st.error("Por favor, preencha todos os campos")
+                        st.error("Por favor, insira um nome e adicione pelo menos um pasto")
 
         # Remover piloto pelo administrador
         if st.session_state['painel'] == "Administrador":
@@ -411,64 +394,64 @@ def main():
                     st.subheader("Quantidade Aplicada em Cada Fazenda")
                     st.write(df_fazendas)
 
-    # Criar backup dos dados
-    with st.sidebar.expander("Backup de Dados"):
-        if st.button("Criar Backup"):
-            criar_backup()
-            with open('backup.zip', 'rb') as file:
-                st.download_button(
-                    label="Baixar Backup",
-                    data=file,
-                    file_name="backup.zip",
-                    mime="application/zip"
-                )
-                st.success("Backup criado com sucesso!")
+        # Criar backup dos dados
+        with st.sidebar.expander("Backup de Dados"):
+            if st.button("Criar Backup"):
+                criar_backup()
+                with open('backup.zip', 'rb') as file:
+                    st.download_button(
+                        label="Baixar Backup",
+                        data=file,
+                        file_name="backup.zip",
+                        mime="application/zip"
+                    )
+                    st.success("Backup criado com sucesso!")
 
-    # Recuperar backup dos dados
-    with st.sidebar.expander("Recuperar Backup de Dados"):
-        backup_upload = st.file_uploader("Escolha um arquivo de backup", type=["zip"])
-        if backup_upload is not None:
-            with open("temp_backup.zip", "wb") as f:
-                f.write(backup_upload.getbuffer())
-            recuperar_backup("temp_backup.zip")
-            st.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
+        # Recuperar backup dos dados
+        with st.sidebar.expander("Recuperar Backup de Dados"):
+            backup_upload = st.file_uploader("Escolha um arquivo de backup", type=["zip"])
+            if backup_upload is not None:
+                with open("temp_backup.zip", "wb") as f:
+                    f.write(backup_upload.getbuffer())
+                recuperar_backup("temp_backup.zip")
+                st.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
 
-    # Visualização diária por piloto
-    if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
-        st.subheader("Visualização Diária por Piloto")
-        hoje = datetime.today().strftime('%Y-%m-%d')
-        st.write(f"Dados de aplicação diária para {hoje}")
+        # Visualização diária por piloto
+        if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Administrador":
+            st.subheader("Visualização Diária por Piloto")
+            hoje = datetime.today().strftime('%Y-%m-%d')
+            st.write(f"Dados de aplicação diária para {hoje}")
 
-        if pilotos:
-            df_hoje = pd.DataFrame()
-            for piloto, dados in pilotos.items():
-                df_piloto = pd.DataFrame(dados)
-                if 'data' in df_piloto.columns:
-                    df_piloto['data'] = pd.to_datetime(df_piloto['data'])
-                    df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
-                    if not df_hoje_piloto.empty:
-                        df_hoje_piloto['piloto'] = piloto
-                        df_hoje = pd.concat([df_hoje, df_hoje_piloto])
+            if pilotos:
+                df_hoje = pd.DataFrame()
+                for piloto, dados in pilotos.items():
+                    df_piloto = pd.DataFrame(dados)
+                    if 'data' in df_piloto.columns:
+                        df_piloto['data'] = pd.to_datetime(df_piloto['data'])
+                        df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
+                        if not df_hoje_piloto.empty:
+                            df_hoje_piloto['piloto'] = piloto
+                            df_hoje = pd.concat([df_hoje, df_hoje_piloto])
 
-            if not df_hoje.empty:
-                fig, ax = plt.subplots(figsize=(10, 6))
-                for piloto in df_hoje['piloto'].unique():
-                    df_piloto = df_hoje[df_hoje['piloto'] == piloto]
-                    ax.bar(df_piloto['piloto'], df_piloto['hectares'], label=piloto, color=cores.get(piloto, 'blue'))
+                if not df_hoje.empty:
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    for piloto in df_hoje['piloto'].unique():
+                        df_piloto = df_hoje[df_hoje['piloto'] == piloto]
+                        ax.bar(df_piloto['piloto'], df_piloto['hectares'], label=piloto, color=cores.get(piloto, 'blue'))
 
-                ax.set_title('Total de Hectares Aplicado Hoje')
-                ax.set_ylabel('Total de Hectares')
-                ax.set_xlabel('Piloto')
-                ax.legend(title="Pilotos")
+                    ax.set_title('Total de Hectares Aplicado Hoje')
+                    ax.set_ylabel('Total de Hectares')
+                    ax.set_xlabel('Piloto')
+                    ax.legend(title="Pilotos")
 
-                for i, v in enumerate(df_hoje['hectares']):
-                    ax.text(i, v, round(v, 2), ha='center', va='bottom')
+                    for i, v in enumerate(df_hoje['hectares']):
+                        ax.text(i, v, round(v, 2), ha='center', va='bottom')
 
-                st.pyplot(fig)
+                    st.pyplot(fig)
+                else:
+                    st.write("Nenhum dado de aplicação para hoje.")
             else:
-                st.write("Nenhum dado de aplicação para hoje.")
-        else:
-            st.write("Nenhum dado de piloto disponível.")
+                st.write("Nenhum dado de piloto disponível.")
 
     # Painel do Piloto
     if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Piloto":
