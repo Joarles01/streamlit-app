@@ -188,14 +188,20 @@ def main():
 
                 if register_pasture_button:
                     if farm_name and pasture_name and pasture_hectares:
-                        if pasture_name not in fazendas[farm_name]['pastos']:
-                            fazendas[farm_name]['pastos'][pasture_name] = {
-                                'tamanho': pasture_hectares
-                            }
-                            salvar_dados(arquivo_fazendas, fazendas)
-                            st.success(f"Pasto {pasture_name} cadastrado na fazenda {farm_name} com sucesso!")
+                        if farm_name in fazendas:
+                            if 'pastos' not in fazendas[farm_name]:
+                                fazendas[farm_name]['pastos'] = {}
+                            if pasture_name not in fazendas[farm_name]['pastos']:
+                                fazendas[farm_name]['pastos'][pasture_name] = {
+                                    'tamanho': pasture_hectares,
+                                    'dados_aplicacao': []
+                                }
+                                salvar_dados(arquivo_fazendas, fazendas)
+                                st.success(f"Pasto {pasture_name} cadastrado na fazenda {farm_name} com sucesso!")
+                            else:
+                                st.error("Pasto já existe nessa fazenda")
                         else:
-                            st.error("Pasto já existe nessa fazenda")
+                            st.error("Fazenda não encontrada")
                     else:
                         st.error("Por favor, preencha todos os campos")
 
@@ -484,7 +490,6 @@ def main():
                     datas_existentes = [dado['data'] for dado in dados_piloto]
                     if str(data) not in datas_existentes:
                         pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
-                        fazendas[fazenda]['pastos'][pasto]['dados_aplicacao'] = fazendas[fazenda]['pastos'].get('dados_aplicacao', [])
                         fazendas[fazenda]['pastos'][pasto]['dados_aplicacao'].append({'data': str(data), 'hectares': hectares, 'piloto': piloto_atual})
                         salvar_dados(arquivo_pilotos, pilotos)
                         salvar_dados(arquivo_fazendas, fazendas)
