@@ -410,6 +410,8 @@ def main():
                         df_fazendas = pd.concat([df_fazendas, pd.DataFrame([aplicacao])])
 
                 if not df_fazendas.empty:
+                    df_fazendas['data'] = pd.to_datetime(df_fazendas['data'])  # Certificar que a coluna 'data' está no formato datetime
+
                     st.write("Dados agregados das fazendas:")
                     st.write(df_fazendas)
 
