@@ -161,32 +161,33 @@ def main():
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Cadastrar Nova Fazenda"):
                 new_farm_name = st.text_input("Nome da Nova Fazenda")
-                pastures = []
-                new_pasture_name = st.text_input("Nome do Pasto")
-                new_pasture_hectares = st.number_input("Tamanho do Pasto (hectares)", min_value=0.0, format="%.2f")
-                if st.button("Adicionar Pasto"):
-                    if new_pasture_name and new_pasture_hectares:
-                        pastures.append({
-                            'nome': new_pasture_name,
-                            'tamanho': new_pasture_hectares
-                        })
-                        st.success(f"Pasto {new_pasture_name} adicionado com sucesso!")
-                    else:
-                        st.error("Por favor, preencha todos os campos do pasto")
-                
                 if st.button("Cadastrar Fazenda"):
-                    if new_farm_name and pastures:
+                    if new_farm_name:
                         if new_farm_name not in fazendas:
-                            fazendas[new_farm_name] = {
-                                'total_hectares': sum([pasto['tamanho'] for pasto in pastures]),
-                                'pastos': {pasto['nome']: {'tamanho': pasto['tamanho'], 'dados_aplicacao': []} for pasto in pastures}
-                            }
+                            fazendas[new_farm_name] = {'pastos': {}}
                             salvar_dados(arquivo_fazendas, fazendas)
                             st.success(f"Fazenda {new_farm_name} cadastrada com sucesso!")
                         else:
                             st.error("Fazenda já existe")
                     else:
-                        st.error("Por favor, insira um nome e adicione pelo menos um pasto")
+                        st.error("Por favor, insira um nome para a fazenda")
+
+        # Adicionar pastos a fazendas
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Adicionar Pasto a uma Fazenda"):
+                selected_farm = st.selectbox("Selecione a Fazenda", list(fazendas.keys()))
+                new_pasture_name = st.text_input("Nome do Pasto")
+                new_pasture_hectares = st.number_input("Tamanho do Pasto (hectares)", min_value=0.0, format="%.2f")
+                if st.button("Adicionar Pasto"):
+                    if new_pasture_name and new_pasture_hectares:
+                        if selected_farm in fazendas:
+                            fazendas[selected_farm]['pastos'][new_pasture_name] = {'tamanho': new_pasture_hectares, 'dados_aplicacao': []}
+                            salvar_dados(arquivo_fazendas, fazendas)
+                            st.success(f"Pasto {new_pasture_name} adicionado à fazenda {selected_farm} com sucesso!")
+                        else:
+                            st.error("Fazenda não encontrada")
+                    else:
+                        st.error("Por favor, preencha todos os campos do pasto")
 
         # Remover piloto pelo administrador
         if st.session_state['painel'] == "Administrador":
@@ -380,7 +381,7 @@ def main():
                         df_fazendas = pd.concat([df_fazendas, df_fazenda_pasture])
 
                 if not df_fazendas.empty:
-                    df_fazendas['data'] = pd.to_datetime(df_fazendas['data'])  # Certificar que a coluna 'data' está no formato datetime
+                    df_fazendas['data'] = pd.to_datetime(df_fazendas['data'])
 
                     st.write("Dados agregados das fazendas:")
                     st.write(df_fazendas)
@@ -464,7 +465,7 @@ def main():
             data = st.date_input('Data')
             hectares = st.number_input('Hectares', min_value=0.0, format="%.2f")
             fazenda = st.selectbox('Fazenda', list(fazendas.keys()))
-            pasto = st.selectbox('Pasto', [pasture for farm in fazendas.values() for pasture in farm['pastos'].keys()])
+            pasto = st.selectbox('Pasto', list(fazendas[fazenda]['pastos'].keys()) if fazenda in fazendas else [])
 
             if st.button('Adicionar Hectares'):
                 piloto_atual = st.session_state["usuario_logado"]
@@ -495,7 +496,7 @@ def main():
                     new_date = st.date_input('Nova data', pd.to_datetime(selected_date))
                     new_hectares = st.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f")
                     new_fazenda = st.selectbox('Nova Fazenda', list(fazendas.keys()), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]))
-                    new_pasto = st.selectbox('Novo Pasto', [pasture for farm in fazendas.values() for pasture in farm['pastos'].keys()], index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]))
+                    new_pasto = st.selectbox('Novo Pasto', list(fazendas[new_fazenda]['pastos'].keys()), index=list(fazendas[new_fazenda]['pastos'].keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]))
                     if st.button('Salvar Alterações'):
                         for dado in pilotos[st.session_state["usuario_logado"]]:
                             if dado['data'] == selected_date:
