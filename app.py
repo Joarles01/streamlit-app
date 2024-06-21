@@ -189,6 +189,30 @@ def main():
                     else:
                         st.error("Por favor, preencha todos os campos do pasto")
 
+        # Editar fazendas e pastos
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Editar Fazenda e Pastos"):
+                edit_farm = st.selectbox("Selecione a Fazenda", list(fazendas.keys()))
+                if edit_farm:
+                    st.write(f"Editando fazenda: {edit_farm}")
+                    new_farm_name = st.text_input("Novo Nome da Fazenda", edit_farm)
+                    if st.button("Renomear Fazenda"):
+                        if new_farm_name:
+                            fazendas[new_farm_name] = fazendas.pop(edit_farm)
+                            salvar_dados(arquivo_fazendas, fazendas)
+                            st.success(f"Fazenda renomeada para {new_farm_name}")
+
+                    selected_pasture = st.selectbox("Selecione o Pasto", list(fazendas[new_farm_name]['pastos'].keys()))
+                    if selected_pasture:
+                        new_pasture_name = st.text_input("Novo Nome do Pasto", selected_pasture)
+                        new_pasture_hectares = st.number_input("Novo Tamanho do Pasto (hectares)", min_value=0.0, value=fazendas[new_farm_name]['pastos'][selected_pasture]['tamanho'], format="%.2f")
+                        if st.button("Salvar Alterações do Pasto"):
+                            if new_pasture_name:
+                                fazendas[new_farm_name]['pastos'][new_pasture_name] = fazendas[new_farm_name]['pastos'].pop(selected_pasture)
+                                fazendas[new_farm_name]['pastos'][new_pasture_name]['tamanho'] = new_pasture_hectares
+                                salvar_dados(arquivo_fazendas, fazendas)
+                                st.success(f"Pasto {selected_pasture} alterado para {new_pasture_name} com sucesso!")
+
         # Remover piloto pelo administrador
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Remover Piloto"):
@@ -388,8 +412,10 @@ def main():
 
                     # Mostrar todas as fazendas cadastradas com o total de hectares
                     st.subheader("Lista de Fazendas Cadastradas")
-                    lista_fazendas = pd.DataFrame.from_dict(fazendas, orient='index')
-                    st.write(lista_fazendas[['total_hectares']])
+                    for fazenda, dados in fazendas.items():
+                        st.write(f"**{fazenda}**")
+                        for pasto, pasto_dados in dados['pastos'].items():
+                            st.write(f"- {pasto}: {pasto_dados['tamanho']} hectares")
 
                     # Mostrar dados das aplicações por fazenda
                     st.subheader("Quantidade Aplicada em Cada Fazenda")
