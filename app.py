@@ -193,22 +193,30 @@ def main():
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Cadastrar Nova Fazenda"):
                 new_farm_name = st.text_input("Nome da Nova Fazenda", key="new_farm_name")
+                new_farm_latitude = st.text_input("Latitude da Nova Fazenda", key="new_farm_latitude")
+                new_farm_longitude = st.text_input("Longitude da Nova Fazenda", key="new_farm_longitude")
                 pastos = []
                 numero_pastos = st.number_input("Número de Pastos", min_value=1, max_value=20, step=1, key="numero_pastos")
                 for i in range(int(numero_pastos)):
                     pasto_name = st.text_input(f"Nome do Pasto {i + 1}", key=f"pasto_name_{i}")
                     pasto_hectares = st.number_input(f"Hectares do Pasto {i + 1}", min_value=0.0, format="%.2f", key=f"pasto_hectares_{i}")
-                    pastos.append((pasto_name, pasto_hectares))
+                    pasto_latitude = st.text_input(f"Latitude do Pasto {i + 1}", key=f"pasto_latitude_{i}")
+                    pasto_longitude = st.text_input(f"Longitude do Pasto {i + 1}", key=f"pasto_longitude_{i}")
+                    pastos.append((pasto_name, pasto_hectares, pasto_latitude, pasto_longitude))
                 if st.button("Cadastrar Fazenda", key="register_farm_button"):
-                    if new_farm_name and all(pasto[0] and pasto[1] for pasto in pastos):
+                    if new_farm_name and new_farm_latitude and new_farm_longitude and all(pasto[0] and pasto[1] for pasto in pastos):
                         if new_farm_name not in fazendas:
-                            fazendas[new_farm_name] = {'pastos': {pasto[0]: {'tamanho': pasto[1], 'dados_aplicacao': []} for pasto in pastos}}
+                            fazendas[new_farm_name] = {
+                                'latitude': new_farm_latitude,
+                                'longitude': new_farm_longitude,
+                                'pastos': {pasto[0]: {'tamanho': pasto[1], 'latitude': pasto[2], 'longitude': pasto[3], 'dados_aplicacao': []} for pasto in pastos}
+                            }
                             salvar_dados(arquivo_fazendas, fazendas)
                             st.success(f"Fazenda {new_farm_name} cadastrada com sucesso!")
                         else:
                             st.error("Fazenda já existe")
                     else:
-                        st.error("Por favor, insira um nome para a fazenda e todos os pastos com seus hectares")
+                        st.error("Por favor, insira um nome para a fazenda, coordenadas e todos os pastos com seus hectares e coordenadas")
 
         # Associar pilotos às fazendas
         if st.session_state['painel'] == "Administrador":
@@ -277,28 +285,38 @@ def main():
                 selected_farm_to_edit = st.selectbox("Selecione a Fazenda para Editar", list(fazendas.keys()), key="selected_farm_to_edit")
                 if selected_farm_to_edit:
                     new_farm_name = st.text_input("Novo Nome da Fazenda", value=selected_farm_to_edit, key="new_farm_name_edit")
+                    new_farm_latitude = st.text_input("Nova Latitude da Fazenda", value=fazendas[selected_farm_to_edit]['latitude'], key="new_farm_latitude_edit")
+                    new_farm_longitude = st.text_input("Nova Longitude da Fazenda", value=fazendas[selected_farm_to_edit]['longitude'], key="new_farm_longitude_edit")
                     if st.button("Renomear Fazenda", key="rename_farm_button"):
                         if new_farm_name:
                             fazendas[new_farm_name] = fazendas.pop(selected_farm_to_edit)
+                            fazendas[new_farm_name]['latitude'] = new_farm_latitude
+                            fazendas[new_farm_name]['longitude'] = new_farm_longitude
                             salvar_dados(arquivo_fazendas, fazendas)
                             st.success(f"Fazenda renomeada para {new_farm_name}")
 
                     for pasto in list(fazendas[selected_farm_to_edit]['pastos'].keys()):
                         new_pasto_name = st.text_input(f"Novo Nome do Pasto ({pasto})", value=pasto, key=f"new_pasto_name_{pasto}")
                         new_pasto_hectares = st.number_input(f"Novo Tamanho do Pasto ({pasto})", value=fazendas[selected_farm_to_edit]['pastos'][pasto]['tamanho'], min_value=0.0, format="%.2f", key=f"new_pasto_hectares_{pasto}")
+                        new_pasto_latitude = st.text_input(f"Nova Latitude do Pasto ({pasto})", value=fazendas[selected_farm_to_edit]['pastos'][pasto]['latitude'], key=f"new_pasto_latitude_{pasto}")
+                        new_pasto_longitude = st.text_input(f"Nova Longitude do Pasto ({pasto})", value=fazendas[selected_farm_to_edit]['pastos'][pasto]['longitude'], key=f"new_pasto_longitude_{pasto}")
                         if st.button(f"Salvar Alterações do Pasto ({pasto})", key=f"save_pasto_changes_button_{pasto}"):
                             if new_pasto_name != pasto:
                                 fazendas[selected_farm_to_edit]['pastos'][new_pasto_name] = fazendas[selected_farm_to_edit]['pastos'].pop(pasto)
                             fazendas[selected_farm_to_edit]['pastos'][new_pasto_name]['tamanho'] = new_pasto_hectares
+                            fazendas[selected_farm_to_edit]['pastos'][new_pasto_name]['latitude'] = new_pasto_latitude
+                            fazendas[selected_farm_to_edit]['pastos'][new_pasto_name]['longitude'] = new_pasto_longitude
                             salvar_dados(arquivo_fazendas, fazendas)
                             st.success(f"Pasto {pasto} atualizado com sucesso!")
 
                     novo_pasto_name = st.text_input("Nome do Novo Pasto", key="new_pasto_name_add")
                     novo_pasto_hectares = st.number_input("Tamanho do Novo Pasto (hectares)", min_value=0.0, format="%.2f", key="new_pasto_hectares_add")
+                    novo_pasto_latitude = st.text_input("Latitude do Novo Pasto", key="new_pasto_latitude_add")
+                    novo_pasto_longitude = st.text_input("Longitude do Novo Pasto", key="new_pasto_longitude_add")
                     if st.button("Adicionar Novo Pasto", key="add_new_pasto_button"):
-                        if novo_pasto_name and novo_pasto_hectares:
+                        if novo_pasto_name and novo_pasto_hectares and novo_pasto_latitude and novo_pasto_longitude:
                             if novo_pasto_name not in fazendas[selected_farm_to_edit]['pastos']:
-                                fazendas[selected_farm_to_edit]['pastos'][novo_pasto_name] = {'tamanho': novo_pasto_hectares, 'dados_aplicacao': []}
+                                fazendas[selected_farm_to_edit]['pastos'][novo_pasto_name] = {'tamanho': novo_pasto_hectares, 'latitude': novo_pasto_latitude, 'longitude': novo_pasto_longitude, 'dados_aplicacao': []}
                                 salvar_dados(arquivo_fazendas, fazendas)
                                 st.success(f"Pasto {novo_pasto_name} adicionado com sucesso!")
                             else:
@@ -350,13 +368,21 @@ def main():
                     for fazenda, dados_fazenda in fazendas.items():
                         total_hectares_fazenda = sum(pasto['tamanho'] for pasto in dados_fazenda['pastos'].values())
                         if st.checkbox(f"{fazenda} ({total_hectares_fazenda} hectares)", key=f"checkbox_{fazenda}"):
+                            # Link do Google Earth para a fazenda
+                            fazenda_link = f"https://earth.google.com/web/search/{dados_fazenda['latitude']},{dados_fazenda['longitude']}"
+                            st.markdown(f"[Ver Fazenda no Google Earth]({fazenda_link})", unsafe_allow_html=True)
+
                             for pasto, dados_pasto in dados_fazenda['pastos'].items():
-                                st.subheader(f"Pasto: {pasto} ({dados_pasto['tamanho']} hectares)")
-                                if dados_pasto['dados_aplicacao']:
-                                    df_pasto = pd.DataFrame(dados_pasto['dados_aplicacao'])
-                                    st.write(df_pasto)
-                                else:
-                                    st.write("Nenhuma aplicação registrada para este pasto.")
+                                with st.expander(f"Pasto: {pasto} ({dados_pasto['tamanho']} hectares)"):
+                                    # Link do Google Earth para o pasto
+                                    pasto_link = f"https://earth.google.com/web/search/{dados_pasto['latitude']},{dados_pasto['longitude']}"
+                                    st.markdown(f"[Ver Pasto no Google Earth]({pasto_link})", unsafe_allow_html=True)
+
+                                    if dados_pasto['dados_aplicacao']:
+                                        df_pasto = pd.DataFrame(dados_pasto['dados_aplicacao'])
+                                        st.write(df_pasto)
+                                    else:
+                                        st.write("Nenhuma aplicação registrada para este pasto.")
             
             # Modificar cores dos pilotos
             with st.sidebar.expander("Modificar Cores dos Pilotos"):
