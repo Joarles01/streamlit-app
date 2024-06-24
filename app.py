@@ -199,27 +199,27 @@ def main():
         # Alterar associação de pilotos às fazendas
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Alterar Associação de Pilotos às Fazendas"):
-                selected_farm_to_edit = st.selectbox("Selecione a Fazenda para Editar", list(fazendas.keys()), key="selected_farm_to_edit")
-                if selected_farm_to_edit:
-                    pilotos_associados = [usuario for usuario, dados in usuarios.items() if 'fazendas' in dados and selected_farm_to_edit in dados['fazendas']]
+                selected_farm_to_edit_assoc = st.selectbox("Selecione a Fazenda para Editar", list(fazendas.keys()), key="selected_farm_to_edit_assoc")
+                if selected_farm_to_edit_assoc:
+                    pilotos_associados = [usuario for usuario, dados in usuarios.items() if 'fazendas' in dados and selected_farm_to_edit_assoc in dados['fazendas']]
                     pilotos_nao_associados = [usuario for usuario in usuarios if usuario not in pilotos_associados and usuario != 'admin']
-                    piloto_remover = st.selectbox("Selecione o Piloto para Remover da Fazenda", pilotos_associados, key="piloto_remover")
-                    piloto_adicionar = st.selectbox("Selecione o Piloto para Adicionar à Fazenda", pilotos_nao_associados, key="piloto_adicionar")
+                    piloto_remover = st.selectbox("Selecione o Piloto para Remover da Fazenda", pilotos_associados, key="piloto_remover_assoc")
+                    piloto_adicionar = st.selectbox("Selecione o Piloto para Adicionar à Fazenda", pilotos_nao_associados, key="piloto_adicionar_assoc")
 
-                    if st.button("Remover Piloto da Fazenda", key="remove_pilot_from_farm_button"):
-                        if piloto_remover in usuarios and selected_farm_to_edit in usuarios[piloto_remover]['fazendas']:
-                            usuarios[piloto_remover]['fazendas'].remove(selected_farm_to_edit)
+                    if st.button("Remover Piloto da Fazenda", key="remove_pilot_from_farm_button_assoc"):
+                        if piloto_remover in usuarios and selected_farm_to_edit_assoc in usuarios[piloto_remover]['fazendas']:
+                            usuarios[piloto_remover]['fazendas'].remove(selected_farm_to_edit_assoc)
                             salvar_dados(arquivo_usuarios, usuarios)
-                            st.success(f"Piloto {piloto_remover} removido da fazenda {selected_farm_to_edit} com sucesso!")
+                            st.success(f"Piloto {piloto_remover} removido da fazenda {selected_farm_to_edit_assoc} com sucesso!")
 
-                    if st.button("Adicionar Piloto à Fazenda", key="add_pilot_to_farm_button"):
+                    if st.button("Adicionar Piloto à Fazenda", key="add_pilot_to_farm_button_assoc"):
                         if piloto_adicionar in usuarios:
                             if 'fazendas' not in usuarios[piloto_adicionar]:
                                 usuarios[piloto_adicionar]['fazendas'] = []
-                            if selected_farm_to_edit not in usuarios[piloto_adicionar]['fazendas']:
-                                usuarios[piloto_adicionar]['fazendas'].append(selected_farm_to_edit)
+                            if selected_farm_to_edit_assoc not in usuarios[piloto_adicionar]['fazendas']:
+                                usuarios[piloto_adicionar]['fazendas'].append(selected_farm_to_edit_assoc)
                                 salvar_dados(arquivo_usuarios, usuarios)
-                                st.success(f"Piloto {piloto_adicionar} adicionado à fazenda {selected_farm_to_edit} com sucesso!")
+                                st.success(f"Piloto {piloto_adicionar} adicionado à fazenda {selected_farm_to_edit_assoc} com sucesso!")
                             else:
                                 st.error("Piloto já está associado a esta fazenda")
                         else:
@@ -247,9 +247,9 @@ def main():
                             salvar_dados(arquivo_fazendas, fazendas)
                             st.success(f"Pasto {pasto} atualizado com sucesso!")
 
+                    novo_pasto_name = st.text_input("Nome do Novo Pasto", key="new_pasto_name_add")
+                    novo_pasto_hectares = st.number_input("Tamanho do Novo Pasto (hectares)", min_value=0.0, format="%.2f", key="new_pasto_hectares_add")
                     if st.button("Adicionar Novo Pasto", key="add_new_pasto_button"):
-                        novo_pasto_name = st.text_input("Nome do Novo Pasto", key="new_pasto_name")
-                        novo_pasto_hectares = st.number_input("Tamanho do Novo Pasto (hectares)", min_value=0.0, format="%.2f", key="new_pasto_hectares")
                         if novo_pasto_name and novo_pasto_hectares:
                             if novo_pasto_name not in fazendas[selected_farm_to_edit]['pastos']:
                                 fazendas[selected_farm_to_edit]['pastos'][novo_pasto_name] = {'tamanho': novo_pasto_hectares, 'dados_aplicacao': []}
