@@ -204,14 +204,15 @@ def main():
             with st.expander("Dados de Aplicação por Fazenda e Piloto"):
                 if fazendas:
                     for fazenda, dados_fazenda in fazendas.items():
-                        with st.expander(f"Fazenda: {fazenda}"):
-                            for pasto, dados_pasto in dados_fazenda['pastos'].items():
-                                with st.expander(f"Pasto: {pasto} ({dados_pasto['tamanho']} hectares)"):
-                                    if dados_pasto['dados_aplicacao']:
-                                        df_pasto = pd.DataFrame(dados_pasto['dados_aplicacao'])
-                                        st.write(df_pasto)
-                                    else:
-                                        st.write("Nenhuma aplicação registrada para este pasto.")
+                        st.write(f"**Fazenda: {fazenda}**")
+                        for pasto, dados_pasto in dados_fazenda['pastos'].items():
+                            st.write(f"Pasto: {pasto} ({dados_pasto['tamanho']} hectares)")
+                            with st.expander(f"Detalhes do Pasto {pasto}"):
+                                if dados_pasto['dados_aplicacao']:
+                                    df_pasto = pd.DataFrame(dados_pasto['dados_aplicacao'])
+                                    st.write(df_pasto)
+                                else:
+                                    st.write("Nenhuma aplicação registrada para este pasto.")
             
             # Modificar cores dos pilotos
             with st.sidebar.expander("Modificar Cores dos Pilotos"):
