@@ -225,6 +225,46 @@ def main():
                         else:
                             st.error("Piloto não encontrado")
 
+        # Alterar fazendas e pastos
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Alterar Fazendas e Pastos"):
+                selected_farm_to_edit = st.selectbox("Selecione a Fazenda para Editar", list(fazendas.keys()), key="selected_farm_to_edit")
+                if selected_farm_to_edit:
+                    new_farm_name = st.text_input("Novo Nome da Fazenda", value=selected_farm_to_edit, key="new_farm_name_edit")
+                    if st.button("Renomear Fazenda", key="rename_farm_button"):
+                        if new_farm_name:
+                            fazendas[new_farm_name] = fazendas.pop(selected_farm_to_edit)
+                            salvar_dados(arquivo_fazendas, fazendas)
+                            st.success(f"Fazenda renomeada para {new_farm_name}")
+
+                    for pasto in list(fazendas[selected_farm_to_edit]['pastos'].keys()):
+                        new_pasto_name = st.text_input(f"Novo Nome do Pasto ({pasto})", value=pasto, key=f"new_pasto_name_{pasto}")
+                        new_pasto_hectares = st.number_input(f"Novo Tamanho do Pasto ({pasto})", value=fazendas[selected_farm_to_edit]['pastos'][pasto]['tamanho'], min_value=0.0, format="%.2f", key=f"new_pasto_hectares_{pasto}")
+                        if st.button(f"Salvar Alterações do Pasto ({pasto})", key=f"save_pasto_changes_button_{pasto}"):
+                            if new_pasto_name != pasto:
+                                fazendas[selected_farm_to_edit]['pastos'][new_pasto_name] = fazendas[selected_farm_to_edit]['pastos'].pop(pasto)
+                            fazendas[selected_farm_to_edit]['pastos'][new_pasto_name]['tamanho'] = new_pasto_hectares
+                            salvar_dados(arquivo_fazendas, fazendas)
+                            st.success(f"Pasto {pasto} atualizado com sucesso!")
+
+                    if st.button("Adicionar Novo Pasto", key="add_new_pasto_button"):
+                        novo_pasto_name = st.text_input("Nome do Novo Pasto", key="new_pasto_name")
+                        novo_pasto_hectares = st.number_input("Tamanho do Novo Pasto (hectares)", min_value=0.0, format="%.2f", key="new_pasto_hectares")
+                        if novo_pasto_name and novo_pasto_hectares:
+                            if novo_pasto_name not in fazendas[selected_farm_to_edit]['pastos']:
+                                fazendas[selected_farm_to_edit]['pastos'][novo_pasto_name] = {'tamanho': novo_pasto_hectares, 'dados_aplicacao': []}
+                                salvar_dados(arquivo_fazendas, fazendas)
+                                st.success(f"Pasto {novo_pasto_name} adicionado com sucesso!")
+                            else:
+                                st.error("Pasto já existe")
+
+                    pasto_to_remove = st.selectbox("Selecione o Pasto para Remover", list(fazendas[selected_farm_to_edit]['pastos'].keys()), key="pasto_to_remove")
+                    if st.button("Remover Pasto", key="remove_pasto_button"):
+                        if pasto_to_remove in fazendas[selected_farm_to_edit]['pastos']:
+                            del fazendas[selected_farm_to_edit]['pastos'][pasto_to_remove]
+                            salvar_dados(arquivo_fazendas, fazendas)
+                            st.success(f"Pasto {pasto_to_remove} removido com sucesso!")
+
         # Painel do Administrador
         if st.session_state['painel'] == "Administrador":
             st.title("Painel do Administrador")
