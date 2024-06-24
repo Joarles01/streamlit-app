@@ -684,7 +684,7 @@ def main():
 
                 if alterar_dados_button:
                     if novo_nome and nova_senha:
-                        if novo_nome not in usuarios ou novo_nome == st.session_state["usuario_logado"]:
+                        if novo_nome not in usuarios or novo_nome == st.session_state["usuario_logado"]:
                             usuarios[novo_nome] = {
                                 'senha': gerar_hash_senha(nova_senha),
                                 'tipo': 'Piloto'
