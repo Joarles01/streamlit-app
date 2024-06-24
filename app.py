@@ -284,9 +284,10 @@ def main():
             with st.sidebar.expander("Alterar Fazendas e Pastos"):
                 selected_farm_to_edit = st.selectbox("Selecione a Fazenda para Editar", list(fazendas.keys()), key="selected_farm_to_edit")
                 if selected_farm_to_edit:
+                    farm_data = fazendas[selected_farm_to_edit]
                     new_farm_name = st.text_input("Novo Nome da Fazenda", value=selected_farm_to_edit, key="new_farm_name_edit")
-                    new_farm_latitude = st.text_input("Nova Latitude da Fazenda", value=fazendas[selected_farm_to_edit]['latitude'], key="new_farm_latitude_edit")
-                    new_farm_longitude = st.text_input("Nova Longitude da Fazenda", value=fazendas[selected_farm_to_edit]['longitude'], key="new_farm_longitude_edit")
+                    new_farm_latitude = st.text_input("Nova Latitude da Fazenda", value=farm_data.get('latitude', ''), key="new_farm_latitude_edit")
+                    new_farm_longitude = st.text_input("Nova Longitude da Fazenda", value=farm_data.get('longitude', ''), key="new_farm_longitude_edit")
                     if st.button("Renomear Fazenda", key="rename_farm_button"):
                         if new_farm_name:
                             fazendas[new_farm_name] = fazendas.pop(selected_farm_to_edit)
@@ -296,10 +297,11 @@ def main():
                             st.success(f"Fazenda renomeada para {new_farm_name}")
 
                     for pasto in list(fazendas[selected_farm_to_edit]['pastos'].keys()):
+                        pasto_data = fazendas[selected_farm_to_edit]['pastos'][pasto]
                         new_pasto_name = st.text_input(f"Novo Nome do Pasto ({pasto})", value=pasto, key=f"new_pasto_name_{pasto}")
-                        new_pasto_hectares = st.number_input(f"Novo Tamanho do Pasto ({pasto})", value=fazendas[selected_farm_to_edit]['pastos'][pasto]['tamanho'], min_value=0.0, format="%.2f", key=f"new_pasto_hectares_{pasto}")
-                        new_pasto_latitude = st.text_input(f"Nova Latitude do Pasto ({pasto})", value=fazendas[selected_farm_to_edit]['pastos'][pasto]['latitude'], key=f"new_pasto_latitude_{pasto}")
-                        new_pasto_longitude = st.text_input(f"Nova Longitude do Pasto ({pasto})", value=fazendas[selected_farm_to_edit]['pastos'][pasto]['longitude'], key=f"new_pasto_longitude_{pasto}")
+                        new_pasto_hectares = st.number_input(f"Novo Tamanho do Pasto ({pasto})", value=pasto_data.get('tamanho', 0.0), min_value=0.0, format="%.2f", key=f"new_pasto_hectares_{pasto}")
+                        new_pasto_latitude = st.text_input(f"Nova Latitude do Pasto ({pasto})", value=pasto_data.get('latitude', ''), key=f"new_pasto_latitude_{pasto}")
+                        new_pasto_longitude = st.text_input(f"Nova Longitude do Pasto ({pasto})", value=pasto_data.get('longitude', ''), key=f"new_pasto_longitude_{pasto}")
                         if st.button(f"Salvar Alterações do Pasto ({pasto})", key=f"save_pasto_changes_button_{pasto}"):
                             if new_pasto_name != pasto:
                                 fazendas[selected_farm_to_edit]['pastos'][new_pasto_name] = fazendas[selected_farm_to_edit]['pastos'].pop(pasto)
@@ -369,13 +371,13 @@ def main():
                         total_hectares_fazenda = sum(pasto['tamanho'] for pasto in dados_fazenda['pastos'].values())
                         if st.checkbox(f"{fazenda} ({total_hectares_fazenda} hectares)", key=f"checkbox_{fazenda}"):
                             # Link do Google Earth para a fazenda
-                            fazenda_link = f"https://earth.google.com/web/search/{dados_fazenda['latitude']},{dados_fazenda['longitude']}"
+                            fazenda_link = f"https://earth.google.com/web/search/{dados_fazenda.get('latitude', '')},{dados_fazenda.get('longitude', '')}"
                             st.markdown(f"[Ver Fazenda no Google Earth]({fazenda_link})", unsafe_allow_html=True)
 
                             for pasto, dados_pasto in dados_fazenda['pastos'].items():
                                 with st.expander(f"Pasto: {pasto} ({dados_pasto['tamanho']} hectares)"):
                                     # Link do Google Earth para o pasto
-                                    pasto_link = f"https://earth.google.com/web/search/{dados_pasto['latitude']},{dados_pasto['longitude']}"
+                                    pasto_link = f"https://earth.google.com/web/search/{dados_pasto.get('latitude', '')},{dados_pasto.get('longitude', '')}"
                                     st.markdown(f"[Ver Pasto no Google Earth]({pasto_link})", unsafe_allow_html=True)
 
                                     if dados_pasto['dados_aplicacao']:
@@ -663,7 +665,7 @@ def main():
                         selected_date = st.selectbox('Selecione a data para editar', df_piloto['data'], key="edit_selected_date")
                         new_date = st.date_input('Nova data', pd.to_datetime(selected_date), key="edit_new_date")
                         new_hectares = st.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f", key="edit_new_hectares")
-                        new_fazenda = st.selectbox('Nova Fazenda', usuarios[st.session_state['usuario_logado']].get('fazendas', []), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]), key="edit_new_fazenda")
+                        new_fazenda = st.selectbox('Nova Fazenda', usuarios[st.session_state["usuario_logado"]].get('fazendas', []), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]), key="edit_new_fazenda")
                         new_pasto = st.selectbox('Novo Pasto', list(fazendas[new_fazenda]['pastos'].keys()), index=list(fazendas[new_fazenda]['pastos'].keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]), key="edit_new_pasto")
                         if st.button('Salvar Alterações', key="save_hectares_changes_button"):
                             for dado in pilotos[st.session_state["usuario_logado"]]:
