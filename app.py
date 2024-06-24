@@ -400,7 +400,7 @@ def main():
         with st.sidebar.expander("Recuperar Backup de Dados"):
             backup_upload = st.file_uploader("Escolha um arquivo de backup", type=["zip"], key="backup_upload")
             if backup_upload is not None:
-                with open("temp_backup.zip", "wb") as f):
+                with open("temp_backup.zip", "wb") as f:
                     f.write(backup_upload.getbuffer())
                 recuperar_backup("temp_backup.zip")
                 st.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
