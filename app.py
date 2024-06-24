@@ -315,6 +315,35 @@ def main():
         if st.session_state['painel'] == "Administrador":
             st.title("Painel do Administrador")
 
+            # Mostrar lista de pilotos e ajudantes
+            with st.expander("Lista de Pilotos e Ajudantes"):
+                st.subheader("Pilotos")
+                for piloto in [user for user, data in usuarios.items() if data['tipo'] == 'Piloto']:
+                    if st.checkbox(piloto, key=f"checkbox_piloto_{piloto}"):
+                        st.write(f"**Fazendas Associadas:** {', '.join(usuarios[piloto].get('fazendas', []))}")
+                        st.write(f"**Ajudante:** {ajudantes.get(piloto, 'Nenhum ajudante associado')}")
+
+                        if piloto in pilotos:
+                            df_piloto = pd.DataFrame(pilotos[piloto])
+                            if not df_piloto.empty:
+                                st.write("**Dados de Aplicações:**")
+                                st.write(df_piloto)
+                            else:
+                                st.write("Nenhum dado de aplicação disponível.")
+
+                st.subheader("Ajudantes")
+                for ajudante in [user for user, data in usuarios.items() if data['tipo'] == 'Ajudante']:
+                    if st.checkbox(ajudante, key=f"checkbox_ajudante_{ajudante}"):
+                        st.write("**Dados de Aplicações:**")
+                        if ajudante in pilotos:
+                            df_ajudante = pd.DataFrame(pilotos[ajudante])
+                            if not df_ajudante.empty:
+                                st.write(df_ajudante)
+                            else:
+                                st.write("Nenhum dado de aplicação disponível.")
+                        else:
+                            st.write("Nenhum dado de aplicação disponível.")
+
             # Mostrar dados organizados por fazenda e piloto
             with st.expander("Lista de Fazendas"):
                 if fazendas:
@@ -526,7 +555,7 @@ def main():
                 recuperar_backup("temp_backup.zip")
                 st.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
 
-    # Painel do Piloto
+    # Painel do Piloto e Ajudante
     if 'usuario_logado' in st.session_state and st.session_state['painel'] in ["Piloto", "Ajudante"]:
         st.sidebar.title(f'Painel do {st.session_state["painel"]}')
         st.sidebar.success(f'Logado como {st.session_state["usuario_logado"]}')
