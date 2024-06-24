@@ -207,12 +207,12 @@ def main():
                         total_hectares_fazenda = sum(pasto['tamanho'] for pasto in dados_fazenda['pastos'].values())
                         if st.checkbox(f"{fazenda} ({total_hectares_fazenda} hectares)", key=f"checkbox_{fazenda}"):
                             for pasto, dados_pasto in dados_fazenda['pastos'].items():
-                                with st.expander(f"Pasto: {pasto} ({dados_pasto['tamanho']} hectares)"):
-                                    if dados_pasto['dados_aplicacao']:
-                                        df_pasto = pd.DataFrame(dados_pasto['dados_aplicacao'])
-                                        st.write(df_pasto)
-                                    else:
-                                        st.write("Nenhuma aplicação registrada para este pasto.")
+                                st.subheader(f"Pasto: {pasto} ({dados_pasto['tamanho']} hectares)")
+                                if dados_pasto['dados_aplicacao']:
+                                    df_pasto = pd.DataFrame(dados_pasto['dados_aplicacao'])
+                                    st.write(df_pasto)
+                                else:
+                                    st.write("Nenhuma aplicação registrada para este pasto.")
             
             # Modificar cores dos pilotos
             with st.sidebar.expander("Modificar Cores dos Pilotos"):
@@ -400,7 +400,7 @@ def main():
         with st.sidebar.expander("Recuperar Backup de Dados"):
             backup_upload = st.file_uploader("Escolha um arquivo de backup", type=["zip"], key="backup_upload")
             if backup_upload is not None:
-                with open("temp_backup.zip", "wb") as f:
+                with open("temp_backup.zip", "wb") as f):
                     f.write(backup_upload.getbuffer())
                 recuperar_backup("temp_backup.zip")
                 st.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
