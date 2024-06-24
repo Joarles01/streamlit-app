@@ -65,6 +65,7 @@ def criar_backup():
         zipf.write('fotos.json')
         zipf.write('safra.json')
         zipf.write('fazendas.json')
+        zipf.write('ajudantes.json')
 
 # Função para recuperar backup dos dados
 def recuperar_backup(arquivo):
@@ -83,6 +84,7 @@ def main():
     arquivo_fotos = 'fotos.json'
     arquivo_safra = 'safra.json'
     arquivo_fazendas = 'fazendas.json'
+    arquivo_ajudantes = 'ajudantes.json'
 
     # Carregar dados do JSON
     pilotos = carregar_dados(arquivo_pilotos)
@@ -91,6 +93,7 @@ def main():
     fotos = carregar_dados(arquivo_fotos)
     safra = carregar_dados(arquivo_safra)
     fazendas = carregar_dados(arquivo_fazendas)
+    ajudantes = carregar_dados(arquivo_ajudantes)
 
     if not usuarios:
         usuarios['admin'] = {
@@ -147,10 +150,12 @@ def main():
                             pilotos[new_pilot_username] = []
                             cores[new_pilot_username] = '#00ff00'  # Verde
                             fotos[new_pilot_username] = None
+                            ajudantes[new_pilot_username] = None  # Sem ajudante inicialmente
                             salvar_dados(arquivo_usuarios, usuarios)
                             salvar_dados(arquivo_pilotos, pilotos)
                             salvar_dados(arquivo_cores, cores)
                             salvar_dados(arquivo_fotos, fotos)
+                            salvar_dados(arquivo_ajudantes, ajudantes)
                             st.success(f"Piloto {new_pilot_username} cadastrado com sucesso!")
                         else:
                             st.error("Piloto já existe")
@@ -195,6 +200,22 @@ def main():
                             st.error("Piloto já está associado a esta fazenda")
                     else:
                         st.error("Por favor, selecione um piloto e uma fazenda")
+
+        # Associar ajudantes aos pilotos
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Associar Ajudante ao Piloto"):
+                selected_pilot_for_ajudante = st.selectbox("Selecione o Piloto", list(usuarios.keys()), key="selected_pilot_for_ajudante")
+                new_ajudante_name = st.text_input("Nome do Ajudante", key="new_ajudante_name")
+                if st.button("Associar Ajudante ao Piloto", key="associate_ajudante_pilot_button"):
+                    if selected_pilot_for_ajudante and new_ajudante_name:
+                        if new_ajudante_name not in ajudantes.values():
+                            ajudantes[selected_pilot_for_ajudante] = new_ajudante_name
+                            salvar_dados(arquivo_ajudantes, ajudantes)
+                            st.success(f"Ajudante {new_ajudante_name} associado ao piloto {selected_pilot_for_ajudante} com sucesso!")
+                        else:
+                            st.error("Este ajudante já está associado a outro piloto")
+                    else:
+                        st.error("Por favor, selecione um piloto e insira o nome do ajudante")
 
         # Alterar associação de pilotos às fazendas
         if st.session_state['painel'] == "Administrador":
@@ -429,10 +450,12 @@ def main():
                         del pilotos[remove_pilot_username]
                         del cores[remove_pilot_username]
                         del fotos[remove_pilot_username]
+                        del ajudantes[remove_pilot_username]
                         salvar_dados(arquivo_usuarios, usuarios)
                         salvar_dados(arquivo_pilotos, pilotos)
                         salvar_dados(arquivo_cores, cores)
                         salvar_dados(arquivo_fotos, fotos)
+                        salvar_dados(arquivo_ajudantes, ajudantes)
                         st.success(f"Piloto {remove_pilot_username} removido com sucesso!")
                     else:
                         st.error("Piloto não encontrado")
@@ -495,8 +518,17 @@ def main():
                     if str(data) not in datas_existentes:
                         pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
                         fazendas[fazenda]['pastos'][pasto]['dados_aplicacao'].append({'data': str(data), 'hectares': hectares, 'piloto': piloto_atual})
+
+                        # Registrar hectares para o ajudante
+                        ajudante = ajudantes.get(piloto_atual)
+                        if ajudante:
+                            if ajudante not in pilotos:
+                                pilotos[ajudante] = []
+                            pilotos[ajudante].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
+
                         salvar_dados(arquivo_pilotos, pilotos)
                         salvar_dados(arquivo_fazendas, fazendas)
+                        salvar_dados(arquivo_ajudantes, ajudantes)
                         st.success(f'{hectares} hectares adicionados para {piloto_atual} em {data} na fazenda {fazenda} no pasto {pasto}')
                         st.write(f'{hectares} hectares adicionados para {piloto_atual} em {data} na fazenda {fazenda} no pasto {pasto}')
                     else:
