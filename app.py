@@ -364,7 +364,7 @@ def main():
                         salvar_dados(arquivo_pilotos, pilotos)
                         salvar_dados(arquivo_cores, cores)
                         salvar_dados(arquivo_fotos, fotos)
-                        st.success(f"Piloto {remove_pilot_username] removido com sucesso!")
+                        st.success(f"Piloto {remove_pilot_username} removido com sucesso!")
                     else:
                         st.error("Piloto não encontrado")
 
