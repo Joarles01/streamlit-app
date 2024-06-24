@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from io import BytesIO
-from PIL import Image, ImageDraw
+from PIL import Image
 import os
 import hashlib
 import json
