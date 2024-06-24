@@ -162,6 +162,33 @@ def main():
                     else:
                         st.error("Por favor, insira um nome de usuário e uma senha")
 
+        # Cadastro de novos ajudantes pelo administrador
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Cadastrar Novo Ajudante"):
+                new_ajudante_username = st.text_input("Nome do Novo Ajudante", key="new_ajudante_username")
+                new_ajudante_password = st.text_input("Senha do Novo Ajudante", type="password", key="new_ajudante_password")
+                register_ajudante_button = st.button("Cadastrar Ajudante", key="register_ajudante_button")
+
+                if register_ajudante_button:
+                    if new_ajudante_username and new_ajudante_password:
+                        if new_ajudante_username not in usuarios:
+                            usuarios[new_ajudante_username] = {
+                                'senha': gerar_hash_senha(new_ajudante_password),
+                                'tipo': 'Ajudante'
+                            }
+                            pilotos[new_ajudante_username] = []
+                            cores[new_ajudante_username] = '#ff0000'  # Vermelho
+                            fotos[new_ajudante_username] = None
+                            salvar_dados(arquivo_usuarios, usuarios)
+                            salvar_dados(arquivo_pilotos, pilotos)
+                            salvar_dados(arquivo_cores, cores)
+                            salvar_dados(arquivo_fotos, fotos)
+                            st.success(f"Ajudante {new_ajudante_username} cadastrado com sucesso!")
+                        else:
+                            st.error("Ajudante já existe")
+                    else:
+                        st.error("Por favor, insira um nome de usuário e uma senha")
+
         # Cadastro de fazendas e pastos pelo administrador
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Cadastrar Nova Fazenda"):
@@ -205,17 +232,15 @@ def main():
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Associar Ajudante ao Piloto"):
                 selected_pilot_for_ajudante = st.selectbox("Selecione o Piloto", list(usuarios.keys()), key="selected_pilot_for_ajudante")
-                new_ajudante_name = st.text_input("Nome do Ajudante", key="new_ajudante_name")
+                available_ajudantes = [user for user, data in usuarios.items() if data['tipo'] == 'Ajudante' and user not in ajudantes.values()]
+                selected_ajudante = st.selectbox("Selecione o Ajudante", available_ajudantes, key="selected_ajudante")
                 if st.button("Associar Ajudante ao Piloto", key="associate_ajudante_pilot_button"):
-                    if selected_pilot_for_ajudante and new_ajudante_name:
-                        if new_ajudante_name not in ajudantes.values():
-                            ajudantes[selected_pilot_for_ajudante] = new_ajudante_name
-                            salvar_dados(arquivo_ajudantes, ajudantes)
-                            st.success(f"Ajudante {new_ajudante_name} associado ao piloto {selected_pilot_for_ajudante} com sucesso!")
-                        else:
-                            st.error("Este ajudante já está associado a outro piloto")
+                    if selected_pilot_for_ajudante and selected_ajudante:
+                        ajudantes[selected_pilot_for_ajudante] = selected_ajudante
+                        salvar_dados(arquivo_ajudantes, ajudantes)
+                        st.success(f"Ajudante {selected_ajudante} associado ao piloto {selected_pilot_for_ajudante} com sucesso!")
                     else:
-                        st.error("Por favor, selecione um piloto e insira o nome do ajudante")
+                        st.error("Por favor, selecione um piloto e um ajudante")
 
         # Alterar associação de pilotos às fazendas
         if st.session_state['painel'] == "Administrador":
@@ -450,7 +475,11 @@ def main():
                         del pilotos[remove_pilot_username]
                         del cores[remove_pilot_username]
                         del fotos[remove_pilot_username]
-                        del ajudantes[remove_pilot_username]
+                        if remove_pilot_username in ajudantes:
+                            del ajudantes[remove_pilot_username]
+                        for pilot, helper in list(ajudantes.items()):
+                            if helper == remove_pilot_username:
+                                del ajudantes[pilot]
                         salvar_dados(arquivo_usuarios, usuarios)
                         salvar_dados(arquivo_pilotos, pilotos)
                         salvar_dados(arquivo_cores, cores)
@@ -498,138 +527,60 @@ def main():
                 st.success("Backup recuperado com sucesso! Por favor, recarregue a página.")
 
     # Painel do Piloto
-    if 'usuario_logado' in st.session_state and st.session_state['painel'] == "Piloto":
-        st.sidebar.title('Painel do Piloto')
+    if 'usuario_logado' in st.session_state and st.session_state['painel'] in ["Piloto", "Ajudante"]:
+        st.sidebar.title(f'Painel do {st.session_state["painel"]}')
         st.sidebar.success(f'Logado como {st.session_state["usuario_logado"]}')
-        st.write(f'Piloto atual: {st.session_state["usuario_logado"]}')
+        st.write(f'{st.session_state["painel"]} atual: {st.session_state["usuario_logado"]}')
 
-        # Entrada de Hectares
-        with st.sidebar.expander("Entrada de Hectares"):
-            data = st.date_input('Data', key="data_hectares")
-            hectares = st.number_input('Hectares', min_value=0.0, format="%.2f", key="hectares_input")
-            fazenda = st.selectbox('Fazenda', usuarios[st.session_state['usuario_logado']].get('fazendas', []), key="fazenda_input")
-            pasto = st.selectbox('Pasto', list(fazendas[fazenda]['pastos'].keys()) if fazenda in fazendas else [], key="pasto_input")
+        if st.session_state['painel'] == "Piloto":
+            # Entrada de Hectares
+            with st.sidebar.expander("Entrada de Hectares"):
+                data = st.date_input('Data', key="data_hectares")
+                hectares = st.number_input('Hectares', min_value=0.0, format="%.2f", key="hectares_input")
+                fazenda = st.selectbox('Fazenda', usuarios[st.session_state['usuario_logado']].get('fazendas', []), key="fazenda_input")
+                pasto = st.selectbox('Pasto', list(fazendas[fazenda]['pastos'].keys()) if fazenda in fazendas else [], key="pasto_input")
 
-            if st.button('Adicionar Hectares', key="add_hectares_button"):
-                piloto_atual = st.session_state["usuario_logado"]
-                if piloto_atual and fazenda and pasto:
-                    dados_piloto = pilotos[piloto_atual]
-                    datas_existentes = [dado['data'] for dado in dados_piloto]
-                    if str(data) not in datas_existentes:
-                        pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
-                        fazendas[fazenda]['pastos'][pasto]['dados_aplicacao'].append({'data': str(data), 'hectares': hectares, 'piloto': piloto_atual})
+                if st.button('Adicionar Hectares', key="add_hectares_button"):
+                    piloto_atual = st.session_state["usuario_logado"]
+                    if piloto_atual and fazenda and pasto:
+                        dados_piloto = pilotos[piloto_atual]
+                        datas_existentes = [dado['data'] for dado in dados_piloto]
+                        if str(data) not in datas_existentes:
+                            pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
+                            fazendas[fazenda]['pastos'][pasto]['dados_aplicacao'].append({'data': str(data), 'hectares': hectares, 'piloto': piloto_atual})
 
-                        # Registrar hectares para o ajudante
-                        ajudante = ajudantes.get(piloto_atual)
-                        if ajudante:
-                            if ajudante not in pilotos:
-                                pilotos[ajudante] = []
-                            pilotos[ajudante].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
+                            # Registrar hectares para o ajudante
+                            ajudante = ajudantes.get(piloto_atual)
+                            if ajudante:
+                                if ajudante not in pilotos:
+                                    pilotos[ajudante] = []
+                                pilotos[ajudante].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
 
-                        salvar_dados(arquivo_pilotos, pilotos)
-                        salvar_dados(arquivo_fazendas, fazendas)
-                        salvar_dados(arquivo_ajudantes, ajudantes)
-                        st.success(f'{hectares} hectares adicionados para {piloto_atual} em {data} na fazenda {fazenda} no pasto {pasto}')
-                        st.write(f'{hectares} hectares adicionados para {piloto_atual} em {data} na fazenda {fazenda} no pasto {pasto}')
+                            salvar_dados(arquivo_pilotos, pilotos)
+                            salvar_dados(arquivo_fazendas, fazendas)
+                            salvar_dados(arquivo_ajudantes, ajudantes)
+                            st.success(f'{hectares} hectares adicionados para {piloto_atual} em {data} na fazenda {fazenda} no pasto {pasto}')
+                            st.write(f'{hectares} hectares adicionados para {piloto_atual} em {data} na fazenda {fazenda} no pasto {pasto}')
+                        else:
+                            st.error('Já existe uma entrada para essa data. Por favor, edite a entrada existente.')
                     else:
-                        st.error('Já existe uma entrada para essa data. Por favor, edite a entrada existente.')
-                else:
-                    st.error('Erro ao identificar o piloto, fazenda ou pasto.')
+                        st.error('Erro ao identificar o piloto, fazenda ou pasto.')
 
-        # Editar dados de hectares
-        with st.sidebar.expander("Editar Dados de Hectares"):
-            dados_piloto = pilotos.get(st.session_state["usuario_logado"], [])
-            if dados_piloto:
-                df_piloto = pd.DataFrame(dados_piloto)
-                if 'fazenda' not in df_piloto.columns:
-                    st.error('Nenhum dado de fazenda disponível.')
-                else:
-                    selected_date = st.selectbox('Selecione a data para editar', df_piloto['data'], key="edit_selected_date")
-                    new_date = st.date_input('Nova data', pd.to_datetime(selected_date), key="edit_new_date")
-                    new_hectares = st.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f", key="edit_new_hectares")
-                    new_fazenda = st.selectbox('Nova Fazenda', usuarios[st.session_state['usuario_logado']].get('fazendas', []), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]), key="edit_new_fazenda")
-                    new_pasto = st.selectbox('Novo Pasto', list(fazendas[new_fazenda]['pastos'].keys()), index=list(fazendas[new_fazenda]['pastos'].keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]), key="edit_new_pasto")
-                    if st.button('Salvar Alterações', key="save_hectares_changes_button"):
-                        for dado in pilotos[st.session_state["usuario_logado"]]:
-                            if dado['data'] == selected_date:
-                                dado['data'] = str(new_date)
-                                dado['hectares'] = new_hectares
-                                dado['fazenda'] = new_fazenda
-                                dado['pasto'] = new_pasto
-                        salvar_dados(arquivo_pilotos, pilotos)
-                        salvar_dados(arquivo_fazendas, fazendas)
-                        st.success('Dados atualizados com sucesso!')
-
-        # Remover dados de hectares por data
-        with st.sidebar.expander("Remover Dados de Hectares"):
-            if dados_piloto:
-                df_piloto = pd.DataFrame(dados_piloto)
-                selected_date_remove = st.selectbox('Selecione a data para remover', df_piloto['data'], key="remove_selected_date")
-                if st.button('Remover Dados', key="remove_hectares_button"):
-                    pilotos[st.session_state["usuario_logado"]] = [dado for dado in pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
-                    for fazenda in fazendas.values():
-                        for pasto in fazenda['pastos'].values():
-                            pasto['dados_aplicacao'] = [dado for dado in pasto['dados_aplicacao'] if dado['data'] != selected_date_remove]
-                    salvar_dados(arquivo_pilotos, pilotos)
-                    salvar_dados(arquivo_fazendas, fazendas)
-                    st.success('Dados removidos com sucesso!')
-
-        # Alterar nome e senha do piloto
-        with st.sidebar.expander("Alterar Nome e Senha"):
-            novo_nome = st.text_input('Novo Nome de Usuário', key="new_username")
-            nova_senha = st.text_input('Nova Senha', type='password', key="new_password")
-            alterar_dados_button = st.button('Alterar Dados', key="change_credentials_button")
-
-            if alterar_dados_button:
-                if novo_nome and nova_senha:
-                    if novo_nome not in usuarios or novo_nome == st.session_state["usuario_logado"]:
-                        usuarios[novo_nome] = {
-                            'senha': gerar_hash_senha(nova_senha),
-                            'tipo': 'Piloto'
-                        }
-                        pilotos[novo_nome] = pilotos.pop(st.session_state["usuario_logado"])
-                        cores[novo_nome] = cores.pop(st.session_state["usuario_logado"])
-                        fotos[novo_nome] = fotos.pop(st.session_state["usuario_logado"])
-                        if novo_nome != st.session_state["usuario_logado"]:
-                            del usuarios[st.session_state["usuario_logado"]]
-                        st.session_state["usuario_logado"] = novo_nome
-                        salvar_dados(arquivo_usuarios, usuarios)
-                        salvar_dados(arquivo_pilotos, pilotos)
-                        salvar_dados(arquivo_cores, cores)
-                        salvar_dados(arquivo_fotos, fotos)
-                        st.success('Dados alterados com sucesso!')
-                    else:
-                        st.error('Nome de usuário já existe.')
-                else:
-                    st.error('Por favor, preencha todos os campos.')
-
-        # Upload de foto de perfil
-        with st.sidebar.expander("Foto de Perfil"):
-            uploaded_file = st.file_uploader("Escolha uma imagem", type=["png", "jpg", "jpeg"], key="profile_picture_upload")
-            if uploaded_file is not None:
-                bytes_data = uploaded_file.read()
-                foto_path = f'foto_{st.session_state["usuario_logado"]}.png'
-                with open(foto_path, 'wb') as f:
-                    f.write(bytes_data)
-                fotos[st.session_state["usuario_logado"]] = foto_path
-                salvar_dados(arquivo_fotos, fotos)
-                st.success('Foto de perfil atualizada com sucesso!')
-
-        # Mostrar mensagem motivacional
-        st.title(f'Dados do Piloto: {st.session_state["usuario_logado"]}')
+        # Exibir dados do piloto ou ajudante
+        st.title(f'Dados do {st.session_state["painel"]}: {st.session_state["usuario_logado"]}')
         foto_piloto = fotos.get(st.session_state["usuario_logado"])
         if foto_piloto and os.path.exists(foto_piloto):
             st.image(foto_piloto, caption="Foto de Perfil", use_column_width=False, width=150)
 
-        dados_piloto = pilotos.get(st.session_state["usuario_logado"], [])
+        dados_usuario = pilotos.get(st.session_state["usuario_logado"], [])
 
-        if dados_piloto:
-            df_piloto = pd.DataFrame(dados_piloto)
-            st.write(df_piloto)
+        if dados_usuario:
+            df_usuario = pd.DataFrame(dados_usuario)
+            st.write(df_usuario)
 
-            hectares_totais = df_piloto['hectares'].sum()
-            media_hectares_dia = df_piloto['hectares'].mean()
-            total_dias = df_piloto['data'].nunique()
+            hectares_totais = df_usuario['hectares'].sum()
+            media_hectares_dia = df_usuario['hectares'].mean()
+            total_dias = df_usuario['data'].nunique()
 
             # Mostrar mensagem motivacional
             if media_hectares_dia < 40:
@@ -643,7 +594,87 @@ def main():
             st.subheader(f"Média de Hectares por Dia: {media_hectares_dia}")
             st.subheader(f"Total de Dias Trabalhados: {total_dias}")
         else:
-            st.write("Nenhum dado disponível para este piloto.")
+            st.write("Nenhum dado disponível para este usuário.")
+
+        # Editar dados de hectares
+        if st.session_state['painel'] == "Piloto":
+            with st.sidebar.expander("Editar Dados de Hectares"):
+                dados_piloto = pilotos.get(st.session_state["usuario_logado"], [])
+                if dados_piloto:
+                    df_piloto = pd.DataFrame(dados_piloto)
+                    if 'fazenda' not in df_piloto.columns:
+                        st.error('Nenhum dado de fazenda disponível.')
+                    else:
+                        selected_date = st.selectbox('Selecione a data para editar', df_piloto['data'], key="edit_selected_date")
+                        new_date = st.date_input('Nova data', pd.to_datetime(selected_date), key="edit_new_date")
+                        new_hectares = st.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f", key="edit_new_hectares")
+                        new_fazenda = st.selectbox('Nova Fazenda', usuarios[st.session_state['usuario_logado']].get('fazendas', []), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]), key="edit_new_fazenda")
+                        new_pasto = st.selectbox('Novo Pasto', list(fazendas[new_fazenda]['pastos'].keys()), index=list(fazendas[new_fazenda]['pastos'].keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]), key="edit_new_pasto")
+                        if st.button('Salvar Alterações', key="save_hectares_changes_button"):
+                            for dado in pilotos[st.session_state["usuario_logado"]]:
+                                if dado['data'] == selected_date:
+                                    dado['data'] = str(new_date)
+                                    dado['hectares'] = new_hectares
+                                    dado['fazenda'] = new_fazenda
+                                    dado['pasto'] = new_pasto
+                            salvar_dados(arquivo_pilotos, pilotos)
+                            salvar_dados(arquivo_fazendas, fazendas)
+                            st.success('Dados atualizados com sucesso!')
+
+            # Remover dados de hectares por data
+            with st.sidebar.expander("Remover Dados de Hectares"):
+                if dados_piloto:
+                    df_piloto = pd.DataFrame(dados_piloto)
+                    selected_date_remove = st.selectbox('Selecione a data para remover', df_piloto['data'], key="remove_selected_date")
+                    if st.button('Remover Dados', key="remove_hectares_button"):
+                        pilotos[st.session_state["usuario_logado"]] = [dado for dado in pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
+                        for fazenda in fazendas.values():
+                            for pasto in fazenda['pastos'].values():
+                                pasto['dados_aplicacao'] = [dado for dado in pasto['dados_aplicacao'] if dado['data'] != selected_date_remove]
+                        salvar_dados(arquivo_pilotos, pilotos)
+                        salvar_dados(arquivo_fazendas, fazendas)
+                        st.success('Dados removidos com sucesso!')
+
+            # Alterar nome e senha do piloto
+            with st.sidebar.expander("Alterar Nome e Senha"):
+                novo_nome = st.text_input('Novo Nome de Usuário', key="new_username")
+                nova_senha = st.text_input('Nova Senha', type='password', key="new_password")
+                alterar_dados_button = st.button('Alterar Dados', key="change_credentials_button")
+
+                if alterar_dados_button:
+                    if novo_nome and nova_senha:
+                        if novo_nome not in usuarios or novo_nome == st.session_state["usuario_logado"]:
+                            usuarios[novo_nome] = {
+                                'senha': gerar_hash_senha(nova_senha),
+                                'tipo': 'Piloto'
+                            }
+                            pilotos[novo_nome] = pilotos.pop(st.session_state["usuario_logado"])
+                            cores[novo_nome] = cores.pop(st.session_state["usuario_logado"])
+                            fotos[novo_nome] = fotos.pop(st.session_state["usuario_logado"])
+                            if novo_nome != st.session_state["usuario_logado"]:
+                                del usuarios[st.session_state["usuario_logado"]]
+                            st.session_state["usuario_logado"] = novo_nome
+                            salvar_dados(arquivo_usuarios, usuarios)
+                            salvar_dados(arquivo_pilotos, pilotos)
+                            salvar_dados(arquivo_cores, cores)
+                            salvar_dados(arquivo_fotos, fotos)
+                            st.success('Dados alterados com sucesso!')
+                        else:
+                            st.error('Nome de usuário já existe.')
+                    else:
+                        st.error('Por favor, preencha todos os campos.')
+
+            # Upload de foto de perfil
+            with st.sidebar.expander("Foto de Perfil"):
+                uploaded_file = st.file_uploader("Escolha uma imagem", type=["png", "jpg", "jpeg"], key="profile_picture_upload")
+                if uploaded_file is not None:
+                    bytes_data = uploaded_file.read()
+                    foto_path = f'foto_{st.session_state["usuario_logado"]}.png'
+                    with open(foto_path, 'wb') as f:
+                        f.write(bytes_data)
+                    fotos[st.session_state["usuario_logado"]] = foto_path
+                    salvar_dados(arquivo_fotos, fotos)
+                    st.success('Foto de perfil atualizada com sucesso!')
 
 if __name__ == "__main__":
     main()
