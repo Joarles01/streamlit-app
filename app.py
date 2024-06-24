@@ -196,6 +196,35 @@ def main():
                     else:
                         st.error("Por favor, selecione um piloto e uma fazenda")
 
+        # Alterar associação de pilotos às fazendas
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Alterar Associação de Pilotos às Fazendas"):
+                selected_farm_to_edit = st.selectbox("Selecione a Fazenda para Editar", list(fazendas.keys()), key="selected_farm_to_edit")
+                if selected_farm_to_edit:
+                    pilotos_associados = [usuario for usuario, dados in usuarios.items() if 'fazendas' in dados and selected_farm_to_edit in dados['fazendas']]
+                    pilotos_nao_associados = [usuario for usuario in usuarios if usuario not in pilotos_associados and usuario != 'admin']
+                    piloto_remover = st.selectbox("Selecione o Piloto para Remover da Fazenda", pilotos_associados, key="piloto_remover")
+                    piloto_adicionar = st.selectbox("Selecione o Piloto para Adicionar à Fazenda", pilotos_nao_associados, key="piloto_adicionar")
+
+                    if st.button("Remover Piloto da Fazenda", key="remove_pilot_from_farm_button"):
+                        if piloto_remover in usuarios and selected_farm_to_edit in usuarios[piloto_remover]['fazendas']:
+                            usuarios[piloto_remover]['fazendas'].remove(selected_farm_to_edit)
+                            salvar_dados(arquivo_usuarios, usuarios)
+                            st.success(f"Piloto {piloto_remover} removido da fazenda {selected_farm_to_edit} com sucesso!")
+
+                    if st.button("Adicionar Piloto à Fazenda", key="add_pilot_to_farm_button"):
+                        if piloto_adicionar in usuarios:
+                            if 'fazendas' not in usuarios[piloto_adicionar]:
+                                usuarios[piloto_adicionar]['fazendas'] = []
+                            if selected_farm_to_edit not in usuarios[piloto_adicionar]['fazendas']:
+                                usuarios[piloto_adicionar]['fazendas'].append(selected_farm_to_edit)
+                                salvar_dados(arquivo_usuarios, usuarios)
+                                st.success(f"Piloto {piloto_adicionar} adicionado à fazenda {selected_farm_to_edit} com sucesso!")
+                            else:
+                                st.error("Piloto já está associado a esta fazenda")
+                        else:
+                            st.error("Piloto não encontrado")
+
         # Painel do Administrador
         if st.session_state['painel'] == "Administrador":
             st.title("Painel do Administrador")
