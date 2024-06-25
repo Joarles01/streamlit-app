@@ -249,7 +249,7 @@ def main():
             with st.sidebar.expander("Alterar Associação de Pilotos às Fazendas"):
                 selected_farm_to_edit_assoc = st.selectbox("Selecione a Fazenda para Editar", list(fazendas.keys()), key="selected_farm_to_edit_assoc")
                 if selected_farm_to_edit_assoc:
-                    pilotos_associados = [usuario for usuario, dados in usuarios.items() if 'fazendas' in dados and selected_farm_to_edit_assoc in dados['fazendas']]
+                    pilotos_associados = [usuario for usuario, dados in usuarios.items() if 'fazendas' in dados e selected_farm_to_edit_assoc in dados['fazendas']]
                     pilotos_nao_associados = [usuario for usuario in usuarios if usuario not in pilotos_associados and usuario != 'admin']
                     piloto_remover = st.selectbox("Selecione o Piloto para Remover da Fazenda", pilotos_associados, key="piloto_remover_assoc")
                     piloto_adicionar = st.selectbox("Selecione o Piloto para Adicionar à Fazenda", pilotos_nao_associados, key="piloto_adicionar_assoc")
@@ -354,7 +354,7 @@ def main():
                         st.write(f"**Fazendas Associadas:** {', '.join(usuarios[piloto].get('fazendas', []))}")
                         st.write(f"**Ajudante:** {ajudantes.get(piloto, 'Nenhum ajudante associado')}")
 
-                        if piloto in pilotos:
+                        if piloto em pilotos:
                             df_piloto = pd.DataFrame(pilotos[piloto])
                             if not df_piloto.empty:
                                 st.write("**Dados de Aplicações:**")
@@ -366,7 +366,7 @@ def main():
                 for ajudante in [user for user, data in usuarios.items() if data['tipo'] == 'Ajudante']:
                     if st.checkbox(ajudante, key=f"checkbox_ajudante_{ajudante}"):
                         st.write("**Dados de Aplicações:**")
-                        if ajudante in pilotos:
+                        if ajudante em pilotos:
                             df_ajudante = pd.DataFrame(pilotos[ajudante])
                             if not df_ajudante.empty:
                                 st.write(df_ajudante)
@@ -424,7 +424,7 @@ def main():
 
                         # Média de hectares por dia
                         media_hectares = df_total.groupby('piloto')['hectares'].mean()
-                        axs[1].bar(media_hectares.index, media_hectares.values, color=[cores[piloto] for piloto in media_hectares.index])
+                        axs[1].bar(media_hectares.index, media_hectares.values, color=[cores[piloto] for piloto em media_hectares.index])
                         axs[1].set_title('Média de Hectares por Dia')
                         axs[1].set_ylabel('Média de Hectares')
                         for i, v in enumerate(media_hectares.values):
@@ -432,7 +432,7 @@ def main():
 
                         # Total de dias
                         total_dias = df_total.groupby('piloto')['data'].count()
-                        axs[2].bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto in total_dias.index])
+                        axs[2].bar(total_dias.index, total_dias.values, color=[cores[piloto] for piloto em total_dias.index])
                         axs[2].set_title('Total de Dias de Aplicação')
                         axs[2].set_ylabel('Total de Dias')
                         for i, v in enumerate(total_dias.values):
@@ -460,7 +460,7 @@ def main():
                             st.image(buf_final)
 
                         # Botão para baixar o gráfico
-                        if logo_image is not None:
+                        if logo_image é not None:
                             st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png", key="download_graphic_button")
                         else:
                             buf = salvar_grafico(fig)
@@ -604,7 +604,7 @@ def main():
                     piloto_atual = st.session_state["usuario_logado"]
                     if piloto_atual and fazenda and pasto:
                         dados_piloto = pilotos[piloto_atual]
-                        datas_existentes = [dado['data'] for dado in dados_piloto]
+                        datas_existentes = [dado['data'] for dado em dados_piloto]
                         if str(data) not in datas_existentes:
                             pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
                             fazendas[fazenda]['pastos'][pasto]['dados_aplicacao'].append({'data': str(data), 'hectares': hectares, 'piloto': piloto_atual})
@@ -668,7 +668,11 @@ def main():
                         selected_date = st.selectbox('Selecione a data para editar', df_piloto['data'], key="edit_selected_date")
                         new_date = st.date_input('Nova data', pd.to_datetime(selected_date), key="edit_new_date")
                         new_hectares = st.number_input('Novo valor de Hectares', min_value=0.0, format="%.2f", key="edit_new_hectares")
-                        new_fazenda = st.selectbox('Nova Fazenda', usuarios[st.session_state["usuario_logado"]].get('fazendas', []), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]), key="edit_new_fazenda")
+                        try:
+                            new_fazenda_index = list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0])
+                        except ValueError:
+                            new_fazenda_index = 0
+                        new_fazenda = st.selectbox('Nova Fazenda', usuarios[st.session_state["usuario_logado"]].get('fazendas', []), index=new_fazenda_index, key="edit_new_fazenda")
                         new_pasto = st.selectbox('Novo Pasto', list(fazendas[new_fazenda]['pastos'].keys()), index=list(fazendas[new_fazenda]['pastos'].keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]), key="edit_new_pasto")
                         if st.button('Salvar Alterações', key="save_hectares_changes_button"):
                             for dado in pilotos[st.session_state["usuario_logado"]]:
@@ -687,10 +691,10 @@ def main():
                     df_piloto = pd.DataFrame(dados_piloto)
                     selected_date_remove = st.selectbox('Selecione a data para remover', df_piloto['data'], key="remove_selected_date")
                     if st.button('Remover Dados', key="remove_hectares_button"):
-                        pilotos[st.session_state["usuario_logado"]] = [dado for dado in pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
-                        for fazenda in fazendas.values():
-                            for pasto in fazenda['pastos'].values():
-                                pasto['dados_aplicacao'] = [dado for dado in pasto['dados_aplicacao'] if dado['data'] != selected_date_remove]
+                        pilotos[st.session_state["usuario_logado"]] = [dado for dado em pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
+                        for fazenda em fazendas.values():
+                            for pasto em fazenda['pastos'].values():
+                                pasto['dados_aplicacao'] = [dado for dado em pasto['dados_aplicacao'] if dado['data'] != selected_date_remove]
                         salvar_dados(arquivo_pilotos, pilotos)
                         salvar_dados(arquivo_fazendas, fazendas)
                         st.success('Dados removidos com sucesso!')
