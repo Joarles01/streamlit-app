@@ -95,7 +95,7 @@ def main():
     fazendas = carregar_dados(arquivo_fazendas)
     ajudantes = carregar_dados(arquivo_ajudantes)
 
-    if não usuários:
+    if not usuarios:
         usuarios['admin'] = {
             'senha': gerar_hash_senha('admin123'),
             'tipo': 'Administrador'
@@ -107,7 +107,7 @@ def main():
         st.sidebar.image(logo_path, use_column_width=True)
 
     # Página de login
-    if 'usuario_logado' não in st.session_state:
+    if 'usuario_logado' not in st.session_state:
         st.sidebar.title("Login")
         username = st.sidebar.text_input("Usuário")
         password = st.sidebar.text_input("Senha", type="password")
@@ -141,7 +141,7 @@ def main():
                 register_pilot_button = st.button("Cadastrar Piloto", key="register_pilot_button")
 
                 if register_pilot_button:
-                    if new_pilot_username e new_pilot_password:
+                    if new_pilot_username and new_pilot_password:
                         if new_pilot_username not in usuarios:
                             usuarios[new_pilot_username] = {
                                 'senha': gerar_hash_senha(new_pilot_password),
@@ -170,7 +170,7 @@ def main():
                 register_ajudante_button = st.button("Cadastrar Ajudante", key="register_ajudante_button")
 
                 if register_ajudante_button:
-                    if new_ajudante_username e new_ajudante_password:
+                    if new_ajudante_username and new_ajudante_password:
                         if new_ajudante_username not in usuarios:
                             usuarios[new_ajudante_username] = {
                                 'senha': gerar_hash_senha(new_ajudante_password),
@@ -200,7 +200,7 @@ def main():
                     pasto_hectares = st.number_input(f"Hectares do Pasto {i + 1}", min_value=0.0, format="%.2f", key=f"pasto_hectares_{i}")
                     pastos.append((pasto_name, pasto_hectares))
                 if st.button("Cadastrar Fazenda", key="register_farm_button"):
-                    if new_farm_name e all(pasto[0] e pasto[1] for pasto in pastos):
+                    if new_farm_name and all(pasto[0] and pasto[1] for pasto in pastos):
                         if new_farm_name not in fazendas:
                             fazendas[new_farm_name] = {
                                 'pastos': {pasto[0]: {'tamanho': pasto[1], 'dados_aplicacao': []} for pasto in pastos}
@@ -218,7 +218,7 @@ def main():
                 selected_pilot = st.selectbox("Selecione o Piloto", list(usuarios.keys()), key="selected_pilot")
                 selected_farm = st.selectbox("Selecione a Fazenda", list(fazendas.keys()), key="selected_farm_association")
                 if st.button("Associar Piloto à Fazenda", key="associate_pilot_farm_button"):
-                    if selected_pilot e selected_farm:
+                    if selected_pilot and selected_farm:
                         if 'fazendas' not in usuarios[selected_pilot]:
                             usuarios[selected_pilot]['fazendas'] = []
                         if selected_farm not in usuarios[selected_pilot]['fazendas']:
@@ -237,7 +237,7 @@ def main():
                 available_ajudantes = [user for user, data in usuarios.items() if data['tipo'] == 'Ajudante' and user not in ajudantes.values()]
                 selected_ajudante = st.selectbox("Selecione o Ajudante", available_ajudantes, key="selected_ajudante")
                 if st.button("Associar Ajudante ao Piloto", key="associate_ajudante_pilot_button"):
-                    if selected_pilot_for_ajudante e selected_ajudante:
+                    if selected_pilot_for_ajudante and selected_ajudante:
                         ajudantes[selected_pilot_for_ajudante] = selected_ajudante
                         salvar_dados(arquivo_ajudantes, ajudantes)
                         st.success(f"Ajudante {selected_ajudante} associado ao piloto {selected_pilot_for_ajudante} com sucesso!")
@@ -327,7 +327,7 @@ def main():
                     novo_pasto_name = st.text_input("Nome do Novo Pasto", key="new_pasto_name_add")
                     novo_pasto_hectares = st.number_input("Tamanho do Novo Pasto (hectares)", min_value=0.0, format="%.2f", key="new_pasto_hectares_add")
                     if st.button("Adicionar Novo Pasto", key="add_new_pasto_button"):
-                        if novo_pasto_name e novo_pasto_hectares:
+                        if novo_pasto_name and novo_pasto_hectares:
                             if novo_pasto_name not in fazendas[selected_farm_to_edit]['pastos']:
                                 fazendas[selected_farm_to_edit]['pastos'][novo_pasto_name] = {'tamanho': novo_pasto_hectares, 'dados_aplicacao': []}
                                 salvar_dados(arquivo_fazendas, fazendas)
@@ -499,11 +499,11 @@ def main():
                         if 'data' in df_piloto.columns:
                             df_piloto['data'] = pd.to_datetime(df_piloto['data'])
                             df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
-                            if não df_hoje_piloto.empty:
+                            if not df_hoje_piloto.empty:
                                 df_hoje_piloto['piloto'] = piloto
                                 df_hoje = pd.concat([df_hoje, df_hoje_piloto])
 
-                    if não df_hoje.empty:
+                    if not df_hoje.empty:
                         fig, ax = plt.subplots(figsize=(10, 6))
                         for piloto in df_hoje['piloto'].unique():
                             df_piloto = df_hoje[df_hoje['piloto'] == piloto]
@@ -602,7 +602,7 @@ def main():
 
                 if st.button('Adicionar Hectares', key="add_hectares_button"):
                     piloto_atual = st.session_state["usuario_logado"]
-                    if piloto_atual e fazenda e pasto:
+                    if piloto_atual and fazenda and pasto:
                         dados_piloto = pilotos[piloto_atual]
                         datas_existentes = [dado['data'] for dado in dados_piloto]
                         if str(data) not in datas_existentes:
@@ -629,7 +629,7 @@ def main():
         # Exibir dados do piloto ou ajudante
         st.title(f'Dados do {st.session_state["painel"]}: {st.session_state["usuario_logado"]}')
         foto_piloto = fotos.get(st.session_state["usuario_logado"])
-        if foto_piloto e os.path.exists(foto_piloto):
+        if foto_piloto and os.path.exists(foto_piloto):
             st.image(foto_piloto, caption="Foto de Perfil", use_column_width=False, width=150)
 
         dados_usuario = pilotos.get(st.session_state["usuario_logado"], [])
@@ -706,8 +706,8 @@ def main():
                 alterar_dados_button = st.button('Alterar Dados', key="change_credentials_button")
 
                 if alterar_dados_button:
-                    if novo_nome e nova_senha:
-                        if novo_nome not in usuarios ou novo_nome == st.session_state["usuario_logado"]:
+                    if novo_nome and nova_senha:
+                        if novo_nome not in usuarios or novo_nome == st.session_state["usuario_logado"]:
                             usuarios[novo_nome] = {
                                 'senha': gerar_hash_senha(nova_senha),
                                 'tipo': 'Piloto'
