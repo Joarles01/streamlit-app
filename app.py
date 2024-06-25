@@ -273,6 +273,33 @@ def main():
                         else:
                             st.error("Piloto não encontrado")
 
+        # Alterar associação de ajudantes aos pilotos
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Alterar Associação de Ajudantes aos Pilotos"):
+                selected_pilot_for_ajudante = st.selectbox("Selecione o Piloto", list(usuarios.keys()), key="selected_pilot_to_edit_ajudante")
+                if selected_pilot_for_ajudante:
+                    current_ajudante = ajudantes.get(selected_pilot_for_ajudante, 'Nenhum ajudante associado')
+                    st.write(f"Ajudante atual: {current_ajudante}")
+                    
+                    available_ajudantes = [user for user, data in usuarios.items() if data['tipo'] == 'Ajudante' and user not in ajudantes.values()]
+                    selected_new_ajudante = st.selectbox("Selecione o Novo Ajudante", available_ajudantes, key="selected_new_ajudante")
+                    
+                    if st.button("Remover Ajudante do Piloto", key="remove_ajudante_from_pilot_button"):
+                        if current_ajudante != 'Nenhum ajudante associado':
+                            del ajudantes[selected_pilot_for_ajudante]
+                            salvar_dados(arquivo_ajudantes, ajudantes)
+                            st.success(f"Ajudante {current_ajudante} removido do piloto {selected_pilot_for_ajudante} com sucesso!")
+                        else:
+                            st.error("Nenhum ajudante associado a este piloto")
+
+                    if st.button("Adicionar Ajudante ao Piloto", key="add_ajudante_to_pilot_button"):
+                        if selected_new_ajudante:
+                            ajudantes[selected_pilot_for_ajudante] = selected_new_ajudante
+                            salvar_dados(arquivo_ajudantes, ajudantes)
+                            st.success(f"Ajudante {selected_new_ajudante} associado ao piloto {selected_pilot_for_ajudante} com sucesso!")
+                        else:
+                            st.error("Por favor, selecione um ajudante")
+
         # Alterar fazendas e pastos
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Alterar Fazendas e Pastos"):
@@ -467,9 +494,9 @@ def main():
 
                 if pilotos:
                     df_hoje = pd.DataFrame()
-                    for piloto, dados in pilotos.items():
+                    for piloto, dados em pilotos.items():
                         df_piloto = pd.DataFrame(dados)
-                        if 'data' in df_piloto.columns:
+                        if 'data' em df_piloto.columns:
                             df_piloto['data'] = pd.to_datetime(df_piloto['data'])
                             df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
                             if not df_hoje_piloto.empty:
@@ -478,7 +505,7 @@ def main():
 
                     if not df_hoje.empty:
                         fig, ax = plt.subplots(figsize=(10, 6))
-                        for piloto in df_hoje['piloto'].unique():
+                        for piloto em df_hoje['piloto'].unique():
                             df_piloto = df_hoje[df_hoje['piloto'] == piloto]
                             ax.bar(df_piloto['piloto'], df_piloto['hectares'], label=piloto, color=cores.get(piloto, 'blue'))
 
@@ -487,7 +514,7 @@ def main():
                         ax.set_xlabel('Piloto')
                         ax.legend(title="Pilotos")
 
-                        for i, v in enumerate(df_hoje['hectares']):
+                        for i, v em enumerate(df_hoje['hectares']):
                             ax.text(i, v, round(v, 2), ha='center', va='bottom')
 
                         st.pyplot(fig)
@@ -577,7 +604,7 @@ def main():
                     piloto_atual = st.session_state["usuario_logado"]
                     if piloto_atual and fazenda and pasto:
                         dados_piloto = pilotos[piloto_atual]
-                        datas_existentes = [dado['data'] for dado in dados_piloto]
+                        datas_existentes = [dado['data'] for dado em dados_piloto]
                         if str(data) not in datas_existentes:
                             pilotos[piloto_atual].append({'data': str(data), 'hectares': hectares, 'fazenda': fazenda, 'pasto': pasto})
                             fazendas[fazenda]['pastos'][pasto]['dados_aplicacao'].append({'data': str(data), 'hectares': hectares, 'piloto': piloto_atual})
@@ -644,7 +671,7 @@ def main():
                         new_fazenda = st.selectbox('Nova Fazenda', usuarios[st.session_state["usuario_logado"]].get('fazendas', []), index=list(fazendas.keys()).index(df_piloto[df_piloto['data'] == selected_date]['fazenda'].values[0]), key="edit_new_fazenda")
                         new_pasto = st.selectbox('Novo Pasto', list(fazendas[new_fazenda]['pastos'].keys()), index=list(fazendas[new_fazenda]['pastos'].keys()).index(df_piloto[df_piloto['data'] == selected_date]['pasto'].values[0]), key="edit_new_pasto")
                         if st.button('Salvar Alterações', key="save_hectares_changes_button"):
-                            for dado in pilotos[st.session_state["usuario_logado"]]:
+                            for dado em pilotos[st.session_state["usuario_logado"]]:
                                 if dado['data'] == selected_date:
                                     dado['data'] = str(new_date)
                                     dado['hectares'] = new_hectares
@@ -660,10 +687,10 @@ def main():
                     df_piloto = pd.DataFrame(dados_piloto)
                     selected_date_remove = st.selectbox('Selecione a data para remover', df_piloto['data'], key="remove_selected_date")
                     if st.button('Remover Dados', key="remove_hectares_button"):
-                        pilotos[st.session_state["usuario_logado"]] = [dado for dado in pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
-                        for fazenda in fazendas.values():
-                            for pasto in fazenda['pastos'].values():
-                                pasto['dados_aplicacao'] = [dado for dado in pasto['dados_aplicacao'] if dado['data'] != selected_date_remove]
+                        pilotos[st.session_state["usuario_logado"]] = [dado para dado em pilotos[st.session_state["usuario_logado"]] if dado['data'] != selected_date_remove]
+                        for fazenda em fazendas.values():
+                            for pasto em fazenda['pastos'].values():
+                                pasto['dados_aplicacao'] = [dado para dado em pasto['dados_aplicacao'] if dado['data'] != selected_date_remove]
                         salvar_dados(arquivo_pilotos, pilotos)
                         salvar_dados(arquivo_fazendas, fazendas)
                         st.success('Dados removidos com sucesso!')
