@@ -452,7 +452,7 @@ def main():
                             df_piloto['piloto'] = piloto
                             df_total = pd.concat([df_total, df_piloto])
 
-                    if não df_total.empty:
+                    if not df_total.empty:
                         st.write("Dados agregados dos pilotos:")
                         st.write(df_total)
 
@@ -542,7 +542,7 @@ def main():
                             df_ajudante['ajudante'] = ajudante
                             df_total_ajudantes = pd.concat([df_total_ajudantes, df_ajudante])
 
-                    if não df_total_ajudantes.empty:
+                    if not df_total_ajudantes.empty:
                         st.write("Dados agregados dos ajudantes:")
                         st.write(df_total_ajudantes)
 
