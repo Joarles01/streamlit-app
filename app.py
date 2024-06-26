@@ -363,7 +363,7 @@ def main():
         # Editar dados da safra
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Editar Dados da Safra"):
-                piloto_selecionado = st.selectbox("Selecione o Piloto", list(safra['pilotos'].keys()), key="editar_piloto_safra")
+                piloto_selecionado = st.selectbox("Selecione o Piloto", list(safra.get('pilotos', {}).keys()), key="editar_piloto_safra")
                 if piloto_selecionado:
                     data_inicio = st.date_input("Data de Início da Safra", pd.to_datetime(safra['pilotos'][piloto_selecionado]['inicio']), key="data_inicio_safra_editar")
                     data_fim = st.date_input("Data de Fim da Safra", pd.to_datetime(safra['pilotos'][piloto_selecionado]['fim']), key="data_fim_safra_editar")
@@ -380,7 +380,7 @@ def main():
         # Remover dados da safra
         if st.session_state['painel'] == "Administrador":
             with st.sidebar.expander("Remover Dados da Safra"):
-                piloto_selecionado = st.selectbox("Selecione o Piloto", list(safra['pilotos'].keys()), key="remover_piloto_safra")
+                piloto_selecionado = st.selectbox("Selecione o Piloto", list(safra.get('pilotos', {}).keys()), key="remover_piloto_safra")
                 if piloto_selecionado:
                     if st.button("Remover Dados da Safra", key="remover_dados_safra"):
                         del safra['pilotos'][piloto_selecionado]
