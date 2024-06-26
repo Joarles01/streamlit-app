@@ -365,9 +365,9 @@ def main():
             with st.sidebar.expander("Editar Dados da Safra"):
                 piloto_selecionado = st.selectbox("Selecione o Piloto", list(safra.get('pilotos', {}).keys()), key="editar_piloto_safra")
                 if piloto_selecionado:
-                    data_inicio = st.date_input("Data de Início da Safra", pd.to_datetime(safra['pilotos'][piloto_selecionado]['inicio']), key="data_inicio_safra_editar")
-                    data_fim = st.date_input("Data de Fim da Safra", pd.to_datetime(safra['pilotos'][piloto_selecionado]['fim']), key="data_fim_safra_editar")
-                    total_hectares = st.number_input("Total de Hectares", value=safra['pilotos'][piloto_selecionado]['total_hectares'], min_value=0.0, format="%.2f", key="total_hectares_safra_editar")
+                    data_inicio = st.date_input("Data de Início da Safra", pd.to_datetime(safra['pilotos'][piloto_selecionado].get('inicio', '1900-01-01')), key="data_inicio_safra_editar")
+                    data_fim = st.date_input("Data de Fim da Safra", pd.to_datetime(safra['pilotos'][piloto_selecionado].get('fim', '1900-01-01')), key="data_fim_safra_editar")
+                    total_hectares = st.number_input("Total de Hectares", value=safra['pilotos'][piloto_selecionado].get('total_hectares', 0.0), min_value=0.0, format="%.2f", key="total_hectares_safra_editar")
                     if st.button("Salvar Alterações da Safra", key="salvar_dados_safra_editar"):
                         safra['pilotos'][piloto_selecionado] = {
                             'inicio': str(data_inicio),
@@ -452,7 +452,7 @@ def main():
                             df_piloto['piloto'] = piloto
                             df_total = pd.concat([df_total, df_piloto])
 
-                    if not df_total.empty:
+                    if não df_total.empty:
                         st.write("Dados agregados dos pilotos:")
                         st.write(df_total)
 
@@ -542,7 +542,7 @@ def main():
                             df_ajudante['ajudante'] = ajudante
                             df_total_ajudantes = pd.concat([df_total_ajudantes, df_ajudante])
 
-                    if not df_total_ajudantes.empty:
+                    if não df_total_ajudantes.empty:
                         st.write("Dados agregados dos ajudantes:")
                         st.write(df_total_ajudantes)
 
