@@ -342,6 +342,51 @@ def main():
                             salvar_dados(arquivo_fazendas, fazendas)
                             st.success(f"Pasto {pasto_to_remove} removido com sucesso!")
 
+        # Adicionar dados da safra
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Adicionar Dados da Safra"):
+                safra['pilotos'] = safra.get('pilotos', {})
+                piloto_selecionado = st.selectbox("Selecione o Piloto", list(pilotos.keys()), key="piloto_safra")
+                if piloto_selecionado:
+                    data_inicio = st.date_input("Data de Início da Safra", key="data_inicio_safra")
+                    data_fim = st.date_input("Data de Fim da Safra", key="data_fim_safra")
+                    total_hectares = st.number_input("Total de Hectares", min_value=0.0, format="%.2f", key="total_hectares_safra")
+                    if st.button("Adicionar Dados da Safra", key="adicionar_dados_safra"):
+                        safra['pilotos'][piloto_selecionado] = {
+                            'inicio': str(data_inicio),
+                            'fim': str(data_fim),
+                            'total_hectares': total_hectares
+                        }
+                        salvar_dados(arquivo_safra, safra)
+                        st.success(f"Dados da safra para {piloto_selecionado} adicionados com sucesso!")
+
+        # Editar dados da safra
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Editar Dados da Safra"):
+                piloto_selecionado = st.selectbox("Selecione o Piloto", list(safra['pilotos'].keys()), key="editar_piloto_safra")
+                if piloto_selecionado:
+                    data_inicio = st.date_input("Data de Início da Safra", pd.to_datetime(safra['pilotos'][piloto_selecionado]['inicio']), key="data_inicio_safra_editar")
+                    data_fim = st.date_input("Data de Fim da Safra", pd.to_datetime(safra['pilotos'][piloto_selecionado]['fim']), key="data_fim_safra_editar")
+                    total_hectares = st.number_input("Total de Hectares", value=safra['pilotos'][piloto_selecionado]['total_hectares'], min_value=0.0, format="%.2f", key="total_hectares_safra_editar")
+                    if st.button("Salvar Alterações da Safra", key="salvar_dados_safra_editar"):
+                        safra['pilotos'][piloto_selecionado] = {
+                            'inicio': str(data_inicio),
+                            'fim': str(data_fim),
+                            'total_hectares': total_hectares
+                        }
+                        salvar_dados(arquivo_safra, safra)
+                        st.success(f"Dados da safra para {piloto_selecionado} atualizados com sucesso!")
+
+        # Remover dados da safra
+        if st.session_state['painel'] == "Administrador":
+            with st.sidebar.expander("Remover Dados da Safra"):
+                piloto_selecionado = st.selectbox("Selecione o Piloto", list(safra['pilotos'].keys()), key="remover_piloto_safra")
+                if piloto_selecionado:
+                    if st.button("Remover Dados da Safra", key="remover_dados_safra"):
+                        del safra['pilotos'][piloto_selecionado]
+                        salvar_dados(arquivo_safra, safra)
+                        st.success(f"Dados da safra para {piloto_selecionado} removidos com sucesso!")
+
         # Painel do Administrador
         if st.session_state['painel'] == "Administrador":
             st.title("Painel do Administrador")
