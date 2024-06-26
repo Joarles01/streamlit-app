@@ -347,8 +347,7 @@ def main():
             st.title("Painel do Administrador")
 
             # Mostrar lista de pilotos e ajudantes
-            with st.expander("Lista de Pilotos e Ajudantes"):
-                st.subheader("Pilotos")
+            with st.expander("Lista de Pilotos"):
                 for piloto in [user for user, data in usuarios.items() if data['tipo'] == 'Piloto']:
                     if st.checkbox(piloto, key=f"checkbox_piloto_{piloto}"):
                         st.write(f"**Fazendas Associadas:** {', '.join(usuarios[piloto].get('fazendas', []))}")
@@ -362,7 +361,7 @@ def main():
                             else:
                                 st.write("Nenhum dado de aplicação disponível.")
 
-                st.subheader("Ajudantes")
+            with st.expander("Lista de Ajudantes"):
                 for ajudante in [user for user, data in usuarios.items() if data['tipo'] == 'Ajudante']:
                     if st.checkbox(ajudante, key=f"checkbox_ajudante_{ajudante}"):
                         st.write("**Dados de Aplicações:**")
@@ -487,41 +486,95 @@ def main():
                 else:
                     st.write("Nenhum dado de piloto disponível.")
 
-                # Visualização diária por piloto
-                st.subheader("Visualização Diária por Piloto")
-                hoje = datetime.today().strftime('%Y-%m-%d')
-                st.write(f"Dados de aplicação diária para {hoje}")
-
+            with st.expander('Dados de Todos os Ajudantes'):
                 if pilotos:
-                    df_hoje = pd.DataFrame()
-                    for piloto, dados in pilotos.items():
-                        df_piloto = pd.DataFrame(dados)
-                        if 'data' in df_piloto.columns:
-                            df_piloto['data'] = pd.to_datetime(df_piloto['data'])
-                            df_hoje_piloto = df_piloto[df_piloto['data'] == pd.to_datetime(hoje)]
-                            if not df_hoje_piloto.empty:
-                                df_hoje_piloto['piloto'] = piloto
-                                df_hoje = pd.concat([df_hoje, df_hoje_piloto])
+                    df_total_ajudantes = pd.DataFrame()
+                    for ajudante, dados in pilotos.items():
+                        if dados and usuarios[ajudante]['tipo'] == 'Ajudante':
+                            df_ajudante = pd.DataFrame(dados)
+                            if 'data' in df_ajudante.columns:
+                                df_ajudante['data'] = pd.to_datetime(df_ajudante['data'])
+                            df_ajudante['ajudante'] = ajudante
+                            df_total_ajudantes = pd.concat([df_total_ajudantes, df_ajudante])
 
-                    if not df_hoje.empty:
-                        fig, ax = plt.subplots(figsize=(10, 6))
-                        for piloto in df_hoje['piloto'].unique():
-                            df_piloto = df_hoje[df_hoje['piloto'] == piloto]
-                            ax.bar(df_piloto['piloto'], df_piloto['hectares'], label=piloto, color=cores.get(piloto, 'blue'))
+                    if not df_total_ajudantes.empty:
+                        st.write("Dados agregados dos ajudantes:")
+                        st.write(df_total_ajudantes)
 
-                        ax.set_title('Total de Hectares Aplicado Hoje')
-                        ax.set_ylabel('Total de Hectares')
-                        ax.set_xlabel('Piloto')
-                        ax.legend(title="Pilotos")
+                        fig, axs = plt.subplots(3, 1, figsize=(10, 18), sharex=True)
 
-                        for i, v in enumerate(df_hoje['hectares']):
-                            ax.text(i, v, round(v, 2), ha='center', va='bottom')
+                        # Total de hectares
+                        total_hectares_ajudantes = df_total_ajudantes.groupby('ajudante')['hectares'].sum()
+                        axs[0].bar(total_hectares_ajudantes.index, total_hectares_ajudantes.values, color=[cores[ajudante] for ajudante in total_hectares_ajudantes.index])
+                        axs[0].set_title('Total de Hectares Aplicado')
+                        axs[0].set_ylabel('Total de Hectares')
+                        for i, v in enumerate(total_hectares_ajudantes.values):
+                            axs[0].text(i, v, round(v, 2), ha='center', va='bottom')
 
+                        # Média de hectares por dia
+                        media_hectares_ajudantes = df_total_ajudantes.groupby('ajudante')['hectares'].mean()
+                        axs[1].bar(media_hectares_ajudantes.index, media_hectares_ajudantes.values, color=[cores[ajudante] for ajudante in media_hectares_ajudantes.index])
+                        axs[1].set_title('Média de Hectares por Dia')
+                        axs[1].set_ylabel('Média de Hectares')
+                        for i, v in enumerate(media_hectares_ajudantes.values):
+                            axs[1].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                        # Total de dias
+                        total_dias_ajudantes = df_total_ajudantes.groupby('ajudante')['data'].count()
+                        axs[2].bar(total_dias_ajudantes.index, total_dias_ajudantes.values, color=[cores[ajudante] for ajudante in total_dias_ajudantes.index])
+                        axs[2].set_title('Total de Dias de Aplicação')
+                        axs[2].set_ylabel('Total de Dias')
+                        for i, v in enumerate(total_dias_ajudantes.values):
+                            axs[2].text(i, v, round(v, 2), ha='center', va='bottom')
+
+                        for ax in axs:
+                            ax.set_xlabel('Ajudantes')
+                            ax.set_xticks(range(len(total_hectares_ajudantes.index)))
+                            ax.set_xticklabels(total_hectares_ajudantes.index, rotation=45, ha='right')
+
+                        fig.tight_layout()
                         st.pyplot(fig)
+
+                        # Adicionar logomarca ao gráfico (com a opção de escolher uma logo diferente)
+                        logo_upload = st.file_uploader("Carregar nova logomarca para o gráfico", type=["png", "jpg", "jpeg"], key="logo_upload_ajudantes")
+                        logo_image = None
+                        if logo_upload is not None:
+                            logo_image = Image.open(logo_upload)
+
+                        if logo_image is None and os.path.exists(logo_path):
+                            logo_image = Image.open(logo_path)
+
+                        if logo_image is not None:
+                            buf_final = adicionar_logomarca(fig, logo_image)
+                            st.image(buf_final)
+
+                        # Botão para baixar o gráfico
+                        if logo_image is not None:
+                            st.download_button(label="Baixar Gráfico", data=buf_final, file_name="grafico_com_logomarca.png", mime="image/png", key="download_graphic_button_ajudantes")
+                        else:
+                            buf = salvar_grafico(fig)
+                            st.download_button(label="Baixar Gráfico", data=buf, file_name="grafico.png", mime="image/png", key="download_graphic_button_no_logo_ajudantes")
+
+                        # Mostrar estatísticas por ajudante
+                        st.subheader('Estatísticas por Ajudante')
+                        stats_ajudantes = df_total_ajudantes.groupby('ajudante').agg(
+                            inicio=pd.NamedAgg(column='data', aggfunc='min'),
+                            fim=pd.NamedAgg(column='data', aggfunc='max'),
+                            total_hectares=pd.NamedAgg(column='hectares', aggfunc='sum'),
+                            media_hectares_dia=pd.NamedAgg(column='hectares', aggfunc='mean'),
+                            total_dias=pd.NamedAgg(column='data', aggfunc='count')
+                        ).reset_index()
+                        st.write(stats_ajudantes)
+                        
+                        # Mostrar o total de hectares aplicados por todos os ajudantes
+                        total_hectares_todos_ajudantes = df_total_ajudantes['hectares'].sum()
+                        st.subheader(f"Total de Hectares Aplicados por Todos os Ajudantes: {total_hectares_todos_ajudantes}")
+
                     else:
-                        st.write("Nenhum dado de aplicação para hoje.")
+                        st.write("Nenhum dado de ajudante disponível.")
+                
                 else:
-                    st.write("Nenhum dado de piloto disponível.")
+                    st.write("Nenhum dado de ajudante disponível.")
 
         # Remover piloto pelo administrador
         if st.session_state['painel'] == "Administrador":
